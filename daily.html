@@ -7,27 +7,25 @@
 <style>html,body{margin:0;width:100%;height:100%;background:#07090d;overflow:hidden}iframe{width:100%;height:100%;border:0}</style>
 </head>
 <body>
-<iframe id="dash" src="index.html"></iframe>
+<iframe id="dash" src="./index.html"></iframe>
 <script>
-function egyptToday(){
-  const parts=new Intl.DateTimeFormat('en-CA',{timeZone:'Africa/Cairo',year:'numeric',month:'2-digit',day:'2-digit'}).formatToParts(new Date());
-  const y=parts.find(x=>x.type==='year').value;
-  const m=parts.find(x=>x.type==='month').value;
-  const d=parts.find(x=>x.type==='day').value;
-  return `${y}-${m}-${d}`;
+function cairoToday(){
+ const p={}; new Intl.DateTimeFormat('en-CA',{timeZone:'Africa/Cairo',year:'numeric',month:'2-digit',day:'2-digit'}).formatToParts(new Date()).forEach(x=>p[x.type]=x.value);
+ return `${p.year}-${p.month}-${p.day}`;
 }
 function setToday(){
-  try{
-    const doc=document.getElementById('dash').contentDocument;
-    const date=doc.getElementById('date');
-    if(!date || date.options.length<=1){setTimeout(setToday,300);return;}
-    const today=egyptToday();
-    const option=[...date.options].find(o=>o.value===today);
-    if(option){date.value=today;date.dispatchEvent(new Event('change'));}
-  }catch(e){console.error(e)}
+ try{
+  const doc=document.getElementById('dash').contentDocument;
+  const date=doc&&doc.getElementById('date');
+  if(!date||date.options.length<2)return false;
+  const today=cairoToday();
+  const ok=[...date.options].some(o=>o.value===today);
+  if(ok){date.value=today;date.dispatchEvent(new Event('change',{bubbles:true}));return true;}
+ }catch(e){}
+ return false;
 }
-document.getElementById('dash').addEventListener('load',()=>setTimeout(setToday,500));
-setInterval(setToday,60000);
+let n=0;const timer=setInterval(()=>{if(setToday()||++n>120)clearInterval(timer)},500);
+document.getElementById('dash').addEventListener('load',()=>{n=0;});
 </script>
 </body>
 </html>
