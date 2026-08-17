@@ -265,9 +265,43 @@ function render(){
   ).join('') || '<tr><td colspan="6">لا توجد ملاحظات عملاء في الشيت الحالي</td></tr>';
 }
 
-function loadBase(){
-  currentRows=fromBase(); mode='base'; fillFilters(); render();
-  document.getElementById('dataStatus').textContent='الداتا الأساسية محملة — يمكنك رفع شيت اليوم بعد إضافة الـCustomer Feedback.';
+  async function loadBase(){
+  try{
+    const response = await fetch('Last_Mile_Data.xlsx?v=' + Date.now());
+
+    if(!response.ok){
+      throw new Error('Excel file not found');
+    }
+
+    const buf = await response.arrayBuffer();
+    const wb = XLSX.read(buf,{type:'array'});
+    const ws = wb.Sheets[wb.SheetNames[0]];
+    const raw = XLSX.utils.sheet_to_json(ws,{defval:''});
+    const normalized = normalize(raw);
+
+    if(!normalized.length){
+      throw new Error('Excel file is empty');
+    }
+
+    currentRows = normalized;
+    mode = 'daily';
+    fillFilters();
+    render();
+
+    document.getElementById('dataStatus').textContent =
+      `آخر تحديث من Excel · ${normalized.length.toLocaleString()} صف`;
+
+  }catch(e){
+
+    currentRows = fromBase();
+    mode = 'base';
+    fillFilters();
+    render();
+
+    document.getElementById('dataStatus').textContent =
+      'تعذر تحميل Excel — تم استخدام الداتا الأساسية مؤقتًا.';
+  }
+
 }
 
 async function loadFile(file){
@@ -302,6 +336,7 @@ document.getElementById('resetFilters').addEventListener('click',()=>{document.g
 document.getElementById('area').addEventListener('input',render);
 document.getElementById('status').addEventListener('input',render);
 document.getElementById('search').addEventListener('input',render);
+setInterval(loadBase, 5 * 60 * 1000);
 loadBase();
 </script>
 </body>
