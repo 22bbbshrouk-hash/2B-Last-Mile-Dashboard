@@ -1,5 +1,6 @@
 (function(){
   const iframe=document.getElementById('dash');
+  let busy=false, timer=null;
   function install(){
     const d=iframe.contentDocument,w=iframe.contentWindow;if(!d||!w)return;
     if(d.getElementById('layoutPatchStyle'))return;
@@ -42,11 +43,14 @@
   const norm=x=>String(x||'').toLowerCase().replace(/[\s_\-()./]/g,'');
   const rankArea=a=>{const n=norm(a);let i=areaOrder.findIndex(x=>norm(x)===n);if(i<0)i=areaOrder.findIndex(x=>n.includes(norm(x))||norm(x).includes(n));return i<0?999:i};
   function sortDetails(){
+    if(busy)return;
     const tb=iframe.contentDocument.getElementById('details');if(!tb)return;
     const rows=[...tb.querySelectorAll('tr')];
     if(rows.length<2)return;
+    busy=true;
     rows.sort((a,b)=>{const aa=a.children[1]?.textContent.trim()||'',bb=b.children[1]?.textContent.trim()||'';const ra=rankArea(aa),rb=rankArea(bb);if(ra!==rb)return ra-rb;return aa.localeCompare(bb,'ar')});
-    rows.forEach(r=>tb.appendChild(r));
+    const frag=iframe.contentDocument.createDocumentFragment();rows.forEach(r=>frag.appendChild(r));tb.appendChild(frag);
+    busy=false;
   }
   const coords={
     'المهندسين':[30.0488,31.201], 'ارض اللواء':[30.066,31.191], 'الزمالك':[30.061,31.219], 'بولاق الدكرور':[30.036,31.184],
@@ -88,7 +92,12 @@
   function observe(){
     const d=iframe.contentDocument;
     const target=d.getElementById('details')||d.querySelector('.grid');if(!target)return;
-    const ob=new MutationObserver(()=>{sortDetails();makeSecondMap()});ob.observe(target,{childList:true,subtree:true});
+    const ob=new MutationObserver(()=>{
+      if(busy)return;
+      clearTimeout(timer);
+      timer=setTimeout(()=>{arrange();},250);
+    });
+    ob.observe(target,{childList:true,subtree:true});
   }
   iframe.addEventListener('load',install);if(iframe.contentDocument?.readyState==='complete')install();
 })();
