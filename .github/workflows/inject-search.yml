@@ -1,7 +1,7 @@
 name: Inject live dashboard search
 on:
   push:
-    branches: [search-fix]
+    branches: [main, search-fix]
 permissions:
   contents: write
 jobs:
