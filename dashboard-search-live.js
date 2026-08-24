@@ -32,6 +32,28 @@
     fillSelect(ids.sku,uniqueValues(matchingRows('sku'),'sku'),sv);
     var orderEl=document.getElementById(ids.order);if(orderEl)orderEl.value=ov;
   }
+  function isImportantStatus(v){
+    var s=normText(v).replace(/[\-_]+/g,' ');
+    if(!s)return false;
+    var words=['delivered','out for delivery','outfordelivery','ready for delivery','readyfordelivery','assigned','picked up','pickedup','no answer','noanswer','cancelled','canceled','cancel','returned','return','refused','failed','failure','rejected','تم التسليم','خرج للتوصيل','جاهز للتوصيل','مخصص','تم الاستلام','لم يرد','ملغي','ملغى','مرتجع','رفض','فشل'];
+    return words.some(function(w){return s.indexOf(normText(w))!==-1});
+  }
+  function renderFollowUp(){
+    var el=document.getElementById('follow');
+    if(!el||!Array.isArray(data))return;
+    var byOrder=new Map();
+    data.forEach(function(x){
+      if(!x||!x.order||!String(x.status||'').trim())return;
+      var n=normText(x.status);
+      var score=isImportantStatus(x.status)?2:1;
+      var old=byOrder.get(x.order);
+      if(!old||score>old._score)byOrder.set(x.order,Object.assign({},x,{_score:score}));
+    });
+    var rows=Array.from(byOrder.values()).filter(function(x){return x._score===2});
+    if(!rows.length)rows=Array.from(byOrder.values());
+    rows.sort(function(a,b){return String(a.order).localeCompare(String(b.order),'ar')});
+    el.innerHTML=rows.map(function(x){return '<tr><td>'+esc(x.order)+'</td><td>'+esc(x.zone)+'</td><td>'+esc(x.area)+'</td><td><span class="tag">'+esc(x.status)+'</span></td></tr>'}).join('')||'<tr><td colspan="4" class="empty">لا توجد بيانات بحالة مسجلة</td></tr>';
+  }
   function apply(){
     if(!allData.length)return;
     var a=selected(ids.area),p=selected(ids.product),s=selected(ids.sku),o=normText(selected(ids.order));
@@ -39,6 +61,7 @@
       return (!a||normText(r.area)===normText(a))&&(!p||normText(r.product)===normText(p))&&(!s||normText(r.sku)===normText(s))&&(!o||normText(r.order).indexOf(o)!==-1);
     });
     render();
+    renderFollowUp();
     var box=getBox();if(box){var count=document.getElementById('twoBSearchCount');if(count)count.textContent=data.length+' نتيجة';}
     refreshOptions();
   }
@@ -57,7 +80,7 @@
   function sync(){
     if(!build())return;
     if(typeof data==='undefined'||!Array.isArray(data))return;
-    if(data!==lastDataRef){lastDataRef=data;allData=data.slice();refreshOptions();}
+    if(data!==lastDataRef){lastDataRef=data;allData=data.slice();refreshOptions();renderFollowUp();}
   }
   var tries=0;
   var timer=setInterval(function(){sync();if(++tries>240)clearInterval(timer)},500);
