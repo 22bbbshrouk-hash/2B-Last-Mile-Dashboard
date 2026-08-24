@@ -1,0 +1,110 @@
+name: Install Live Dashboard Search
+
+on:
+  push:
+    paths:
+      - '.github/workflows/install-live-search.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  install-search:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Inject search into dashboard without rebuilding it
+        shell: python
+        run: |
+          from pathlib import Path
+          p = Path('dashboard-new-20260820.html')
+          text = p.read_text(encoding='utf-8')
+          marker = '<!-- 2B-LIVE-SEARCH -->'
+          if marker in text:
+              print('Search already installed')
+              raise SystemExit(0)
+
+          css = '''<style id="2b-live-search-css">
+          #twoBSearch{grid-column:1/-1;background:#10161e;border:1px solid #26313d;border-radius:14px;padding:12px;display:grid;grid-template-columns:1.2fr 1fr 1fr 1fr auto;gap:8px;direction:rtl;align-items:center;margin:0 0 12px}
+          #twoBSearch input,#twoBSearch select{width:100%;box-sizing:border-box;min-height:40px;padding:9px 10px;border-radius:8px;border:1px solid #34404d;background:#0c1117;color:#fff;outline:none}
+          #twoBSearch button{min-height:40px;padding:9px 18px;border:0;border-radius:8px;background:#ff7900;color:#111;font-weight:900;cursor:pointer}
+          @media(max-width:900px){#twoBSearch{grid-template-columns:1fr 1fr}.twoBSearchWide{grid-column:1/-1}}
+          </style>'''
+
+          html = '''<!-- 2B-LIVE-SEARCH -->
+          <div id="twoBSearch" aria-label="Dashboard search">
+            <input id="twoBOrder" class="twoBSearchWide" type="search" placeholder="📦 رقم الأوردر">
+            <select id="twoBArea"><option value="">📍 AREA</option></select>
+            <select id="twoBProduct"><option value="">🛍️ PRODUCT</option></select>
+            <select id="twoBSku"><option value="">🏷️ SKU</option></select>
+            <button id="twoBSearchBtn" type="button">بحث</button>
+          </div>
+          <script id="2b-live-search-js">
+          (()=>{
+            const norm=v=>String(v??'').trim().toLowerCase();
+            const qs=s=>document.querySelector(s);
+            const rows=()=>[...document.querySelectorAll('#details tbody tr')].filter(r=>r.children.length>=6);
+            const fill=(id,values)=>{const s=document.getElementById(id);if(!s)return;const old=s.value;while(s.options.length>1)s.remove(1);[...new Set(values.map(v=>String(v||'').trim()).filter(Boolean))].sort((a,b)=>a.localeCompare(b,'ar')).forEach(v=>{const o=document.createElement('option');o.value=v;o.textContent=v;s.appendChild(o)});if([...s.options].some(o=>o.value===old))s.value=old};
+            function refreshOptions(){
+              const rs=rows();
+              fill('twoBArea',rs.map(r=>r.children[1]?.textContent));
+              fill('twoBSku',rs.map(r=>r.children[3]?.textContent));
+              fill('twoBProduct',rs.map(r=>r.children[4]?.textContent));
+            }
+            function apply(){
+              const order=norm(document.getElementById('twoBOrder')?.value),area=norm(document.getElementById('twoBArea')?.value),product=norm(document.getElementById('twoBProduct')?.value),sku=norm(document.getElementById('twoBSku')?.value);
+              rows().forEach(r=>{
+                const c=[...r.children].map(x=>norm(x.textContent));
+                const ok=(!order||c[2].includes(order))&&(!area||c[1]===area)&&(!product||c[4]===product)&&(!sku||c[3]===sku);
+                r.style.display=ok?'':'none';
+              });
+              [...document.querySelectorAll('#follow tbody tr')].forEach(r=>{
+                const c=[...r.children].map(x=>norm(x.textContent));
+                const ok=(!order||c[0].includes(order))&&(!area||c[2]===area);
+                r.style.display=ok?'':'none';
+              });
+            }
+            function boot(){
+              const grid=document.querySelector('.grid'),cards=document.querySelector('.cards'),rank=document.querySelector('#rank');
+              if(!grid||!cards||!rank)return false;
+              if(document.getElementById('twoBSearch'))return true;
+              cards.insertAdjacentHTML('afterend',html);
+              refreshOptions();
+              ['twoBArea','twoBProduct','twoBSku'].forEach(id=>document.getElementById(id).addEventListener('change',apply));
+              document.getElementById('twoBOrder').addEventListener('input',apply);
+              document.getElementById('twoBSearchBtn').addEventListener('click',apply);
+              const observer=new MutationObserver(()=>refreshOptions());
+              const detail=document.querySelector('#details');if(detail)observer.observe(detail,{childList:true,subtree:true});
+              return true;
+            }
+            const html=document.createElement('template');
+            html.innerHTML='';
+            let tries=0;
+            const timer=setInterval(()=>{if(boot()||++tries>240)clearInterval(timer)},500);
+            boot();
+          })();
+          </script>'''
+
+          # The script above needs a literal insertion string; replace the template insertion line with a safe DOM-independent HTML constant.
+          html = html.replace("cards.insertAdjacentHTML('afterend',html);", "cards.insertAdjacentHTML('afterend',`" + html.replace('`','\\`').replace('${','\\${') + "`);")
+          # Avoid recursively including the outer variable in the generated script.
+          # Rebuild the injected JS with a simple fixed insertion instead.
+          html = html.replace("const html=document.createElement('template');\n            html.innerHTML='';", "")
+          text = text.replace('</body>', css + html + '</body>', 1)
+          p.write_text(text, encoding='utf-8')
+          print('Search injected into dashboard-new-20260820.html')
+
+      - name: Commit installed search
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add dashboard-new-20260820.html
+          if git diff --cached --quiet; then
+            echo 'No changes to commit'
+          else
+            git commit -m 'Add working dashboard search filter'
+            git push
+          fi
