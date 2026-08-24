@@ -1,3 +1,4 @@
+// Live Search: Order / AREA / PRODUCT / SKU — driven by the dashboard's uploaded Excel data.
 (function(){
   'use strict';
   var allData=[];
