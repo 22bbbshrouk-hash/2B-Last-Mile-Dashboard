@@ -27,73 +27,13 @@ jobs:
               print('Search already installed')
               raise SystemExit(0)
 
-          css = '''<style id="2b-live-search-css">
-          #twoBSearch{grid-column:1/-1;background:#10161e;border:1px solid #26313d;border-radius:14px;padding:12px;display:grid;grid-template-columns:1.2fr 1fr 1fr 1fr auto;gap:8px;direction:rtl;align-items:center;margin:0 0 12px}
-          #twoBSearch input,#twoBSearch select{width:100%;box-sizing:border-box;min-height:40px;padding:9px 10px;border-radius:8px;border:1px solid #34404d;background:#0c1117;color:#fff;outline:none}
-          #twoBSearch button{min-height:40px;padding:9px 18px;border:0;border-radius:8px;background:#ff7900;color:#111;font-weight:900;cursor:pointer}
-          @media(max-width:900px){#twoBSearch{grid-template-columns:1fr 1fr}.twoBSearchWide{grid-column:1/-1}}
-          </style>'''
+          css = '''<style id="2b-live-search-css">#twoBSearch{grid-column:1/-1;background:#10161e;border:1px solid #26313d;border-radius:14px;padding:12px;display:grid;grid-template-columns:1.2fr 1fr 1fr 1fr auto;gap:8px;direction:rtl;align-items:center;margin:0 0 12px}#twoBSearch input,#twoBSearch select{width:100%;box-sizing:border-box;min-height:40px;padding:9px 10px;border-radius:8px;border:1px solid #34404d;background:#0c1117;color:#fff;outline:none}#twoBSearch button{min-height:40px;padding:9px 18px;border:0;border-radius:8px;background:#ff7900;color:#111;font-weight:900;cursor:pointer}@media(max-width:900px){#twoBSearch{grid-template-columns:1fr 1fr}.twoBSearchWide{grid-column:1/-1}}</style>'''
 
-          html = '''<!-- 2B-LIVE-SEARCH -->
-          <div id="twoBSearch" aria-label="Dashboard search">
-            <input id="twoBOrder" class="twoBSearchWide" type="search" placeholder="📦 رقم الأوردر">
-            <select id="twoBArea"><option value="">📍 AREA</option></select>
-            <select id="twoBProduct"><option value="">🛍️ PRODUCT</option></select>
-            <select id="twoBSku"><option value="">🏷️ SKU</option></select>
-            <button id="twoBSearchBtn" type="button">بحث</button>
-          </div>
-          <script id="2b-live-search-js">
-          (()=>{
-            const norm=v=>String(v??'').trim().toLowerCase();
-            const qs=s=>document.querySelector(s);
-            const rows=()=>[...document.querySelectorAll('#details tbody tr')].filter(r=>r.children.length>=6);
-            const fill=(id,values)=>{const s=document.getElementById(id);if(!s)return;const old=s.value;while(s.options.length>1)s.remove(1);[...new Set(values.map(v=>String(v||'').trim()).filter(Boolean))].sort((a,b)=>a.localeCompare(b,'ar')).forEach(v=>{const o=document.createElement('option');o.value=v;o.textContent=v;s.appendChild(o)});if([...s.options].some(o=>o.value===old))s.value=old};
-            function refreshOptions(){
-              const rs=rows();
-              fill('twoBArea',rs.map(r=>r.children[1]?.textContent));
-              fill('twoBSku',rs.map(r=>r.children[3]?.textContent));
-              fill('twoBProduct',rs.map(r=>r.children[4]?.textContent));
-            }
-            function apply(){
-              const order=norm(document.getElementById('twoBOrder')?.value),area=norm(document.getElementById('twoBArea')?.value),product=norm(document.getElementById('twoBProduct')?.value),sku=norm(document.getElementById('twoBSku')?.value);
-              rows().forEach(r=>{
-                const c=[...r.children].map(x=>norm(x.textContent));
-                const ok=(!order||c[2].includes(order))&&(!area||c[1]===area)&&(!product||c[4]===product)&&(!sku||c[3]===sku);
-                r.style.display=ok?'':'none';
-              });
-              [...document.querySelectorAll('#follow tbody tr')].forEach(r=>{
-                const c=[...r.children].map(x=>norm(x.textContent));
-                const ok=(!order||c[0].includes(order))&&(!area||c[2]===area);
-                r.style.display=ok?'':'none';
-              });
-            }
-            function boot(){
-              const grid=document.querySelector('.grid'),cards=document.querySelector('.cards'),rank=document.querySelector('#rank');
-              if(!grid||!cards||!rank)return false;
-              if(document.getElementById('twoBSearch'))return true;
-              cards.insertAdjacentHTML('afterend',html);
-              refreshOptions();
-              ['twoBArea','twoBProduct','twoBSku'].forEach(id=>document.getElementById(id).addEventListener('change',apply));
-              document.getElementById('twoBOrder').addEventListener('input',apply);
-              document.getElementById('twoBSearchBtn').addEventListener('click',apply);
-              const observer=new MutationObserver(()=>refreshOptions());
-              const detail=document.querySelector('#details');if(detail)observer.observe(detail,{childList:true,subtree:true});
-              return true;
-            }
-            const html=document.createElement('template');
-            html.innerHTML='';
-            let tries=0;
-            const timer=setInterval(()=>{if(boot()||++tries>240)clearInterval(timer)},500);
-            boot();
-          })();
-          </script>'''
+          controls = '''<div id="twoBSearch" aria-label="Dashboard search"><input id="twoBOrder" class="twoBSearchWide" type="search" placeholder="📦 رقم الأوردر"><select id="twoBArea"><option value="">📍 AREA</option></select><select id="twoBProduct"><option value="">🛍️ PRODUCT</option></select><select id="twoBSku"><option value="">🏷️ SKU</option></select><button id="twoBSearchBtn" type="button">بحث</button></div>'''
 
-          # The script above needs a literal insertion string; replace the template insertion line with a safe DOM-independent HTML constant.
-          html = html.replace("cards.insertAdjacentHTML('afterend',html);", "cards.insertAdjacentHTML('afterend',`" + html.replace('`','\\`').replace('${','\\${') + "`);")
-          # Avoid recursively including the outer variable in the generated script.
-          # Rebuild the injected JS with a simple fixed insertion instead.
-          html = html.replace("const html=document.createElement('template');\n            html.innerHTML='';", "")
-          text = text.replace('</body>', css + html + '</body>', 1)
+          js = r'''<script id="2b-live-search-js">(()=>{const n=v=>String(v??'').trim().toLowerCase(),rows=()=>[...document.querySelectorAll('#details tbody tr')].filter(r=>r.children.length>=6);function fill(id,vals){const s=document.getElementById(id);if(!s)return;const old=s.value;while(s.options.length>1)s.remove(1);[...new Set(vals.map(v=>String(v||'').trim()).filter(Boolean))].sort((a,b)=>a.localeCompare(b,'ar')).forEach(v=>{const o=document.createElement('option');o.value=v;o.textContent=v;s.appendChild(o)});if([...s.options].some(o=>o.value===old))s.value=old}function refresh(){const rs=rows();fill('twoBArea',rs.map(r=>r.children[1]?.textContent));fill('twoBProduct',rs.map(r=>r.children[4]?.textContent));fill('twoBSku',rs.map(r=>r.children[3]?.textContent))}function apply(){const o=n(document.getElementById('twoBOrder')?.value),a=n(document.getElementById('twoBArea')?.value),p=n(document.getElementById('twoBProduct')?.value),s=n(document.getElementById('twoBSku')?.value);rows().forEach(r=>{const c=[...r.children].map(x=>n(x.textContent));r.style.display=(!o||c[2].includes(o))&&(!a||c[1]===a)&&(!p||c[4]===p)&&(!s||c[3]===s)?'':'none'});[...document.querySelectorAll('#follow tbody tr')].forEach(r=>{const c=[...r.children].map(x=>n(x.textContent));r.style.display=(!o||c[0].includes(o))&&(!a||c[2]===a)?'':'none'})}function boot(){const cards=document.querySelector('.cards'),rank=document.querySelector('#rank');if(!cards||!rank)return false;if(document.getElementById('twoBSearch'))return true;cards.insertAdjacentHTML('afterend',`<div id="twoBSearch" aria-label="Dashboard search"><input id="twoBOrder" class="twoBSearchWide" type="search" placeholder="📦 رقم الأوردر"><select id="twoBArea"><option value="">📍 AREA</option></select><select id="twoBProduct"><option value="">🛍️ PRODUCT</option></select><select id="twoBSku"><option value="">🏷️ SKU</option></select><button id="twoBSearchBtn" type="button">بحث</button></div>`);refresh();['twoBArea','twoBProduct','twoBSku'].forEach(id=>document.getElementById(id).addEventListener('change',apply));document.getElementById('twoBOrder').addEventListener('input',apply);document.getElementById('twoBSearchBtn').addEventListener('click',apply);const detail=document.getElementById('details');if(detail)new MutationObserver(refresh).observe(detail,{childList:true,subtree:true});return true}let t=0,x=setInterval(()=>{if(boot()||++t>240)clearInterval(x)},500);boot()})();</script>'''
+
+          text = text.replace('</body>', css + controls + js + '</body>', 1)
           p.write_text(text, encoding='utf-8')
           print('Search injected into dashboard-new-20260820.html')
 
