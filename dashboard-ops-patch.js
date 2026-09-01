@@ -8,7 +8,6 @@
     ['Container',10,77,27.1529,3615]
   ];
   const SUPABASE='https://wihopmnjpsfsgujugyzl.supabase.co';
-  const API_KEY='sb_publishable_d_iGTrKLgLx3Ntn-xExJhw_teic9wsl';
   const DATA_URL=SUPABASE+'/functions/v1/upload-dashboard';
   const esc=s=>String(s??'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
 
@@ -16,18 +15,15 @@
     const status=document.getElementById('status');
     try{
       if(status) status.textContent='جاري تحميل آخر شيت من السيرفر...';
-      const r=await fetch(DATA_URL+'?v='+Date.now(),{method:'GET',headers:{apikey:API_KEY},cache:'no-store'});
+      const r=await fetch(DATA_URL+'?v='+Date.now(),{method:'GET',cache:'no-store'});
       if(!r.ok) throw new Error((await r.text())||('HTTP '+r.status));
       const buf=await r.arrayBuffer();
-      if(typeof loadBuf==='function'){
-        await loadBuf(buf);
-      }else{
-        throw new Error('Dashboard data loader is unavailable');
-      }
+      if(typeof loadBuf!=='function') throw new Error('Dashboard data loader is unavailable');
+      await loadBuf(buf);
       if(status) status.textContent='تم تحميل آخر شيت ✓';
     }catch(e){
       console.error('Live Excel load failed:',e);
-      if(status) status.textContent='تعذر تحميل الشيت — استخدمي Upload Daily Excel';
+      if(status) status.textContent='تعذر تحميل آخر شيت — استخدمي Upload Daily Excel';
     }
   }
 
@@ -43,11 +39,14 @@
         if(status) status.textContent='جاري رفع شيت اليوم...';
         const form=new FormData();
         form.append('file',file,file.name);
-        const r=await fetch(DATA_URL,{method:'POST',headers:{apikey:API_KEY},body:form});
-        if(!r.ok) throw new Error((await r.text())||('HTTP '+r.status));
-        const result=await r.json();
-        if(!result.ok) throw new Error(result.error||'Upload failed');
-        await loadLatest();
+        // IMPORTANT: do not send apikey/Content-Type manually here.
+        // This keeps the browser request simple and avoids a CORS preflight failure.
+        const r=await fetch(DATA_URL,{method:'POST',body:form,cache:'no-store'});
+        const text=await r.text();
+        let result={};
+        try{ result=JSON.parse(text||'{}'); }catch{}
+        if(!r.ok||!result.ok) throw new Error(result.error||text||('HTTP '+r.status));
+        if(typeof loadLatest==='function') await loadLatest();
         if(status) status.textContent='تم رفع الشيت وتحديث الداشبورد ✓';
       }catch(e){
         console.error('Excel upload failed:',e);
