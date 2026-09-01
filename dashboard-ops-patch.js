@@ -21,9 +21,11 @@
       if(typeof loadBuf!=='function') throw new Error('Dashboard data loader is unavailable');
       await loadBuf(buf);
       if(status) status.textContent='تم تحميل آخر شيت ✓';
+      return true;
     }catch(e){
       console.error('Live Excel load failed:',e);
       if(status) status.textContent='تعذر تحميل آخر شيت — استخدمي Upload Daily Excel';
+      return false;
     }
   }
 
@@ -39,15 +41,18 @@
         if(status) status.textContent='جاري رفع شيت اليوم...';
         const form=new FormData();
         form.append('file',file,file.name);
-        // IMPORTANT: do not send apikey/Content-Type manually here.
-        // This keeps the browser request simple and avoids a CORS preflight failure.
         const r=await fetch(DATA_URL,{method:'POST',body:form,cache:'no-store'});
         const text=await r.text();
         let result={};
         try{ result=JSON.parse(text||'{}'); }catch{}
         if(!r.ok||!result.ok) throw new Error(result.error||text||('HTTP '+r.status));
-        if(typeof loadLatest==='function') await loadLatest();
-        if(status) status.textContent='تم رفع الشيت وتحديث الداشبورد ✓';
+
+        // Render the exact file selected by the user immediately.
+        // Do not depend on a second GET request from Storage to refresh the UI.
+        const localBuf=await file.arrayBuffer();
+        if(typeof loadBuf!=='function') throw new Error('Dashboard data loader is unavailable');
+        await loadBuf(localBuf);
+        if(status) status.textContent=`تم رفع الشيت وتحديث الداشبورد ✓ (${file.name})`;
       }catch(e){
         console.error('Excel upload failed:',e);
         alert('فشل رفع الملف:\n'+(e.message||e));
