@@ -1,20 +1,28 @@
 (function(){
-  const fleet=[
-    ['Dababa Owned',18,5.75,0.167,0],
-    ['Jumbo Owned',4,18,0.5038,0],
-    ['Dababa Fixed',16,5,8.85993,1599],
-    ['Jumbo 4 m Fixed',5,20,14.23344,2658],
-    ['Jumbo 6 m Fixed',10,31.5,14.714,3500],
-    ['Container',10,77,27.1529,3615]
-  ];
+  const fleet=[['Dababa Owned',18,5.75,0.167,0],['Jumbo Owned',4,18,0.5038,0],['Dababa Fixed',16,5,8.85993,1599],['Jumbo 4 m Fixed',5,20,14.23344,2658],['Jumbo 6 m Fixed',10,31.5,14.714,3500],['Container',10,77,27.1529,3615]];
   const SUPABASE='https://wihopmnjpsfsgujugyzl.supabase.co';
   const DATA_URL=SUPABASE+'/functions/v1/upload-dashboard';
+  const XLSX_URL='https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js';
   const esc=s=>String(s??'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+
+  function ensureXLSX(){
+    if(window.XLSX) return Promise.resolve();
+    if(window.__xlsxLoader) return window.__xlsxLoader;
+    window.__xlsxLoader=new Promise((resolve,reject)=>{
+      const script=document.createElement('script');
+      script.src=XLSX_URL+'?v=1';
+      script.onload=()=>window.XLSX?resolve():reject(new Error('XLSX library loaded but global XLSX is missing'));
+      script.onerror=()=>reject(new Error('Could not load Excel parser from CDN'));
+      document.head.appendChild(script);
+    });
+    return window.__xlsxLoader;
+  }
 
   async function loadLatest(){
     const status=document.getElementById('status');
     try{
       if(status) status.textContent='جاري تحميل آخر شيت من السيرفر...';
+      await ensureXLSX();
       const r=await fetch(DATA_URL+'?v='+Date.now(),{method:'GET',cache:'no-store'});
       if(!r.ok) throw new Error((await r.text())||('HTTP '+r.status));
       const buf=await r.arrayBuffer();
@@ -39,16 +47,14 @@
       const status=document.getElementById('status');
       try{
         if(status) status.textContent='جاري رفع شيت اليوم...';
+        await ensureXLSX();
         const form=new FormData();
         form.append('file',file,file.name);
         const r=await fetch(DATA_URL,{method:'POST',body:form,cache:'no-store'});
         const text=await r.text();
         let result={};
-        try{ result=JSON.parse(text||'{}'); }catch{}
+        try{result=JSON.parse(text||'{}')}catch{}
         if(!r.ok||!result.ok) throw new Error(result.error||text||('HTTP '+r.status));
-
-        // Render the exact file selected by the user immediately.
-        // Do not depend on a second GET request from Storage to refresh the UI.
         const localBuf=await file.arrayBuffer();
         if(typeof loadBuf!=='function') throw new Error('Dashboard data loader is unavailable');
         await loadBuf(localBuf);
@@ -57,9 +63,7 @@
         console.error('Excel upload failed:',e);
         alert('فشل رفع الملف:\n'+(e.message||e));
         if(status) status.textContent='مشكلة في رفع الملف — حاولي مرة أخرى';
-      }finally{
-        input.value='';
-      }
+      }finally{input.value=''}
     };
   }
 
@@ -73,14 +77,8 @@
       p.innerHTML='<h2>Fleet Reference</h2><div class="sub">Capacity / Cost per KM / Fixed Cost من بيانات الأسطول المعتمدة. Vehicles Needed لا تُعرض كرقم عند غياب CBM فعلي للـSKU.</div><div class="fleet-grid">'+fleet.map(x=>`<div class="fleet-item"><div class="fleet-name">${esc(x[0])}</div><div class="fleet-meta"><span class="fleet-cap">${x[2]} CBM</span> · ${x[1]} trucks<br>Cost/KM: ${x[3]} · Fixed: ${x[4]?x[4]+' EGP':'—'}</div></div>`).join('')+'</div>';
       cards.parentNode.insertBefore(p,cards.nextSibling);
     }
-    const kv=document.getElementById('kv');
-    if(kv&&kv.textContent.trim()==='0'){kv.textContent='Data Required';kv.classList.add('data-required');}
-    document.querySelectorAll('.chip').forEach(c=>{if(/🚚\s*0\s*vehicle/i.test(c.textContent)||/🚚\s*0\s*vehicles/i.test(c.textContent)){c.textContent='🚚 Data Required';c.classList.add('data-required')}});
-    document.querySelectorAll('.vehicle').forEach(c=>{if(c.textContent.trim()==='🚚'){c.textContent='🚚 Data Required';c.classList.add('data-required')}});
     patchUpload();
     loadLatest();
   }
-  setTimeout(patch,100);
-  setTimeout(patch,1200);
-  setTimeout(patch,3000);
+  setTimeout(patch,100);setTimeout(patch,1200);setTimeout(patch,3000);
 })();
