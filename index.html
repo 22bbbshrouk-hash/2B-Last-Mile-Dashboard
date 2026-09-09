@@ -17,23 +17,57 @@
   html=html.replace('<label class="btn">📤 Upload Daily Excel<input id="file" class="file" type="file" accept=".xlsx,.xls,.csv"></label>',`<label class="btn">📤 Upload Daily Excel<input id="file" class="file" type="file" accept=".xlsx,.xls,.csv"></label><button id="courierSheet" class="btn courierBtn">🚚 شيت المندوب</button>`);
   html=html.replace('</body>',`<script>
 (function(){
+  function loadStyleExcel(callback){
+    if(window.XLSXStyle){callback(window.XLSXStyle);return}
+    var s=document.createElement('script');
+    s.src='https://cdn.jsdelivr.net/npm/xlsx-js-style@1.2.0/dist/xlsx.bundle.js';
+    s.onload=function(){window.XLSXStyle=window.XLSX;callback(window.XLSXStyle)};
+    s.onerror=function(){callback(null)};
+    document.head.appendChild(s);
+  }
+  function buildCourierSheet(X){
+    if(!X){alert('Excel formatting library could not be loaded. Please refresh and try again.');return}
+    if(typeof data==='undefined'||!Array.isArray(data)){alert('الداتا لم تكتمل بعد، حاول مرة أخرى بعد تحميل الشيت');return}
+    var rows=data.map(function(r){
+      var area=String(r.area||'').trim(),route='غير مصنف';
+      try{var ri=routeFor(area);if(ri>=0&&ROUTES[ri])route=ROUTES[ri][0]}catch(e){}
+      return {'Route':route,'Zone / Area':area,'Order No.':String(r.order||'').trim(),'اسم المندوب':''};
+    }).filter(function(r){return r['Order No.']});
+    if(!rows.length){alert('لا توجد Orders في الداتا الحالية');return}
+
+    var wb=X.utils.book_new();
+    var ws=X.utils.json_to_sheet(rows,{header:['Route','Zone / Area','Order No.','اسم المندوب']});
+    X.utils.book_append_sheet(wb,ws,'Courier Assignment');
+
+    ws['!cols']=[{wch:30},{wch:24},{wch:18},{wch:24}];
+    ws['!autofilter']={ref:'A1:D'+(rows.length+1)};
+    ws['!rows']=[{hpt:28}];
+
+    var headerStyle={
+      fill:{patternType:'solid',fgColor:{rgb:'FF1A1F26'}},
+      font:{name:'Arial',sz:11,bold:true,color:{rgb:'FFFFFFFF'}},
+      alignment:{horizontal:'center',vertical:'center'},
+      border:{top:{style:'thin',color:{rgb:'FFFF7900'}},bottom:{style:'thin',color:{rgb:'FFFF7900'}},left:{style:'thin',color:{rgb:'FF3A424D'}},right:{style:'thin',color:{rgb:'FF3A424D'}}}
+    };
+    var bodyBorder={
+      border:{top:{style:'thin',color:{rgb:'FFE1E5EA'}},bottom:{style:'thin',color:{rgb:'FFE1E5EA'}},left:{style:'thin',color:{rgb:'FFE1E5EA'}},right:{style:'thin',color:{rgb:'FFE1E5EA'}}},
+      alignment:{vertical:'center'}
+    };
+    ['A1','B1','C1','D1'].forEach(function(c){ws[c].s=headerStyle});
+    for(var i=2;i<=rows.length+1;i++){
+      ['A','B','C','D'].forEach(function(col){
+        var cell=ws[col+i];
+        if(cell)cell.s=Object.assign({},bodyBorder,{fill:{patternType:'solid',fgColor:{rgb:(i%2===0?'FFFFFFFF':'FFF7F8FA')}}});
+      });
+      ws['D'+i].s=Object.assign({},bodyBorder,{fill:{patternType:'solid',fgColor:{rgb:'FFFFF3E8'}},font:{bold:true,color:{rgb:'FFB45309'}},alignment:{horizontal:'center',vertical:'center'}});
+    }
+    ws['A1'].s=headerStyle;ws['B1'].s=headerStyle;ws['C1'].s=headerStyle;ws['D1'].s=headerStyle;
+    X.writeFile(wb,'2B_Courier_Assignment.xlsx');
+  }
   function initCourier(){
     var btn=document.getElementById('courierSheet');
     if(!btn)return;
-    btn.onclick=function(){
-      if(!window.XLSX){alert('Excel library is not ready. Please refresh and try again.');return}
-      if(typeof data==='undefined'||!Array.isArray(data)){alert('الداتا لم تكتمل بعد، حاول مرة أخرى بعد تحميل الشيت');return}
-      var rows=data.map(function(r){
-        var area=String(r.area||'').trim(),route='غير مصنف';
-        try{var ri=routeFor(area);if(ri>=0&&ROUTES[ri])route=ROUTES[ri][0]}catch(e){}
-        return {'Route':route,'Zone / Area':area,'Order No.':String(r.order||'').trim(),'اسم المندوب':''};
-      }).filter(function(r){return r['Order No.']});
-      if(!rows.length){alert('لا توجد Orders في الداتا الحالية');return}
-      var wb=XLSX.utils.book_new(),ws=XLSX.utils.json_to_sheet(rows);
-      XLSX.utils.book_append_sheet(wb,ws,'Courier Assignment');
-      ws['!cols']=[{wch:30},{wch:24},{wch:18},{wch:24}];
-      XLSX.writeFile(wb,'2B_Courier_Assignment.xlsx');
-    };
+    btn.onclick=function(){loadStyleExcel(buildCourierSheet)};
   }
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',initCourier);else initCourier();
 })();
