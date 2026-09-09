@@ -6,6 +6,7 @@
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
 <meta http-equiv="Pragma" content="no-cache">
 <meta http-equiv="Expires" content="0">
+<link rel="icon" href="data:,">
 <title>2B Last Mile Operations Control Tower</title>
 <style>
 html,body{margin:0;padding:0;width:100%;height:100%;overflow:hidden;background:#07090d}
@@ -24,6 +25,7 @@ iframe{display:block;width:100%;height:100%;border:0}
       const s=doc.createElement('script');
       s.id='geoClusterScript';
       s.src='./geo-cluster.js?v=20260909';
+      s.onerror=function(){console.error('Failed to load geo-cluster.js');};
       doc.body.appendChild(s);
     }catch(e){console.error('Dashboard enhancement load failed',e);}
   });
