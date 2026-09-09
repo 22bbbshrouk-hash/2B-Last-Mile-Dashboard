@@ -25,53 +25,44 @@
     s.onerror=function(){callback(null)};
     document.head.appendChild(s);
   }
+  function cleanArea(v){return String(v||'').replace(/\\s+/g,' ').trim()}
+  function norm(v){return cleanArea(v).normalize('NFKC').toLowerCase().replace(/[أإآ]/g,'ا').replace(/ى/g,'ي').replace(/ة/g,'ه').replace(/[\\s_\\-()./]/g,'')}
+  function courierRoute(area){
+    var n=norm(area);
+    var groups=[
+      ['Route 1 — East',['العبور','الشروق','مدينتي','بدر','العاشرمنرمضان','مدينةالمستقبل','المستقبل','الزقازيق','بلبيس','فاقوس','الشرقية','القنايات','ابوكبير']],
+      ['Route 2 — North / Cairo',['شبرا','رمسيس','بابالشعرية','بولاق','الزاوية','حدائقالقبة','الاميرية','عينشمس','المطرية','المرج','السلام','مدينةالسلام','الوراق','بشتيل','امبابة','روضالفرج','الساحل','الشرابية','قليوب','شبراالخيمة','القليوبية','الخانكة','الخصوص']],
+      ['Route 3 — New Cairo → Giza',['التجمع','الرحاب','القاهرةالجديدة','القاهرهالجديده','الجيزة','الجيزه','فيصل','الهرم','العمرانية','العمرانيه','ابوالنمرس','المنيب','الدقي','المهندسين','العجوزة','العجوزه','بولاقالدكرور','بولاقدكرور','صفط','كرداسة','كرداسه']],
+      ['Route 4 — South',['المعادي','المعادى','زهراءالمعادي','زهراءالمعادى','حلوان','15مايو','مصرالقديمة','مصرالقديمه','السيدةزينب','السيدهزينب','الخليفة','الخليفه','قسمالخليفة','قسمالخليفه','دارالسلام','البساتين','المعصرة','المعصره','طرة','التبين']],
+      ['Route 5 — West',['حدائقاهرام','حدائقالأهرام','اكتوبر','6اكتوبر','السادسمنأكتوبر','الشيخزايد','زايد','اكتوبرالجديدة','اكتوبرالجديده','الواحات']],
+      ['Route 6 — East Cairo',['مدينةنصر','مدينهنصر','المقطم','قطامية','القطامية']],
+      ['Route 7 — Heliopolis / East',['هليوبوليس','مصرالجديدة','مصرالجديده','النزهة','النزهه','روكسي','جسرالسويس','الزيتون','عينشمس','عزبةالنخل','عزبهالنخل']],
+      ['Route 8 — Delta / North Egypt',['طنطا','المحلة','المحله','كفرالشيخ','دمنهور','رشيد','ادكو','دمياط','رأسالبر','راس البر','المنصورة','المنصوره','ميتغمر','الدقهلية','الدقهليه','البحيرة','البحيره','الغربية','الغربيه']],
+      ['Route 9 — Canal / Sinai',['الاسماعيلية','الإسماعيلية','بورسعيد','السويس','العريش','شمالسيناء','جنوبسيناء','شرمالشيخ','دهب','نويبع','رفح','الطور']],
+      ['Route 10 — Upper Egypt',['بني سويف','بني سويف','الفيوم','المنيا','اسيوط','أسيوط','سوهاج','قنا','الاقصر','الأقصر','اسوان','أسوان','الواديالجديد','البحرالاحمر','الغردقه','الغردقة','مرسىعلم']]
+    ];
+    for(var i=0;i<groups.length;i++)for(var j=0;j<groups[i][1].length;j++)if(n.indexOf(norm(groups[i][1][j]))!==-1)return groups[i][0];
+    try{var ri=routeFor(cleanArea(area));if(ri>=0&&ROUTES[ri])return ROUTES[ri][0]}catch(e){}
+    return 'Route — Other Egypt';
+  }
   function buildCourierSheet(X){
     if(!X){alert('Excel formatting library could not be loaded. Please refresh and try again.');return}
     if(typeof data==='undefined'||!Array.isArray(data)){alert('الداتا لم تكتمل بعد، حاول مرة أخرى بعد تحميل الشيت');return}
-    var rows=data.map(function(r){
-      var area=String(r.area||'').trim(),route='غير مصنف';
-      try{var ri=routeFor(area);if(ri>=0&&ROUTES[ri])route=ROUTES[ri][0]}catch(e){}
-      return {'Route':route,'Zone / Area':area,'Order No.':String(r.order||'').trim(),'اسم المندوب':''};
-    }).filter(function(r){return r['Order No.']});
+    var rows=data.map(function(r){var area=cleanArea(r.area);return {'Route':courierRoute(area),'Zone / Area':area,'Order No.':String(r.order||'').trim(),'اسم المندوب':''}}).filter(function(r){return r['Order No.']});
     if(!rows.length){alert('لا توجد Orders في الداتا الحالية');return}
-
-    var wb=X.utils.book_new();
-    var ws=X.utils.json_to_sheet(rows,{header:['Route','Zone / Area','Order No.','اسم المندوب']});
+    var wb=X.utils.book_new(),ws=X.utils.json_to_sheet(rows,{header:['Route','Zone / Area','Order No.','اسم المندوب']});
     X.utils.book_append_sheet(wb,ws,'Courier Assignment');
-
-    ws['!cols']=[{wch:30},{wch:24},{wch:18},{wch:24}];
-    ws['!autofilter']={ref:'A1:D'+(rows.length+1)};
-    ws['!rows']=[{hpt:28}];
-
-    var headerStyle={
-      fill:{patternType:'solid',fgColor:{rgb:'FF1A1F26'}},
-      font:{name:'Arial',sz:11,bold:true,color:{rgb:'FFFFFFFF'}},
-      alignment:{horizontal:'center',vertical:'center'},
-      border:{top:{style:'thin',color:{rgb:'FFFF7900'}},bottom:{style:'thin',color:{rgb:'FFFF7900'}},left:{style:'thin',color:{rgb:'FF3A424D'}},right:{style:'thin',color:{rgb:'FF3A424D'}}}
-    };
-    var bodyBorder={
-      border:{top:{style:'thin',color:{rgb:'FFE1E5EA'}},bottom:{style:'thin',color:{rgb:'FFE1E5EA'}},left:{style:'thin',color:{rgb:'FFE1E5EA'}},right:{style:'thin',color:{rgb:'FFE1E5EA'}}},
-      alignment:{vertical:'center'}
-    };
+    ws['!cols']=[{wch:30},{wch:28},{wch:18},{wch:24}];ws['!autofilter']={ref:'A1:D'+(rows.length+1)};ws['!rows']=[{hpt:28}];
+    var headerStyle={fill:{patternType:'solid',fgColor:{rgb:'FF1A1F26'}},font:{name:'Arial',sz:11,bold:true,color:{rgb:'FFFFFFFF'}},alignment:{horizontal:'center',vertical:'center'},border:{top:{style:'thin',color:{rgb:'FFFF7900'}},bottom:{style:'thin',color:{rgb:'FFFF7900'}},left:{style:'thin',color:{rgb:'FF3A424D'}},right:{style:'thin',color:{rgb:'FF3A424D'}}}};
+    var bodyBorder={border:{top:{style:'thin',color:{rgb:'FFE1E5EA'}},bottom:{style:'thin',color:{rgb:'FFE1E5EA'}},left:{style:'thin',color:{rgb:'FFE1E5EA'}},right:{style:'thin',color:{rgb:'FFE1E5EA'}}},alignment:{vertical:'center'}};
     ['A1','B1','C1','D1'].forEach(function(c){ws[c].s=headerStyle});
-    for(var i=2;i<=rows.length+1;i++){
-      ['A','B','C','D'].forEach(function(col){
-        var cell=ws[col+i];
-        if(cell)cell.s=Object.assign({},bodyBorder,{fill:{patternType:'solid',fgColor:{rgb:(i%2===0?'FFFFFFFF':'FFF7F8FA')}}});
-      });
-      ws['D'+i].s=Object.assign({},bodyBorder,{fill:{patternType:'solid',fgColor:{rgb:'FFFFF3E8'}},font:{bold:true,color:{rgb:'FFB45309'}},alignment:{horizontal:'center',vertical:'center'}});
-    }
-    ws['A1'].s=headerStyle;ws['B1'].s=headerStyle;ws['C1'].s=headerStyle;ws['D1'].s=headerStyle;
+    for(var i=2;i<=rows.length+1;i++){['A','B','C'].forEach(function(col){var cell=ws[col+i];if(cell)cell.s=Object.assign({},bodyBorder,{fill:{patternType:'solid',fgColor:{rgb:(i%2===0?'FFFFFFFF':'FFF7F8FA')}}})});var d=ws['D'+i];if(d)d.s=Object.assign({},bodyBorder,{fill:{patternType:'solid',fgColor:{rgb:'FFFFF3E8'}},font:{bold:true,color:{rgb:'FFB45309'}},alignment:{horizontal:'center',vertical:'center'}})}
     X.writeFile(wb,'2B_Courier_Assignment.xlsx');
   }
-  function initCourier(){
-    var btn=document.getElementById('courierSheet');
-    if(!btn)return;
-    btn.onclick=function(){loadStyleExcel(buildCourierSheet)};
-  }
+  function initCourier(){var btn=document.getElementById('courierSheet');if(!btn)return;btn.onclick=function(){loadStyleExcel(buildCourierSheet)}}
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',initCourier);else initCourier();
 })();
-<`+'/script>');
+<`+'/script>`);
   document.open();document.write(html);document.close();
 })().catch(e=>{document.body.innerHTML='<div style="padding:30px;font-family:Arial">Dashboard failed to load.</div>';console.error(e)});
 </script>
