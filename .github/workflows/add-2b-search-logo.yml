@@ -1,0 +1,40 @@
+name: Add 2B logo above Search
+
+on:
+  push:
+    branches: [main]
+
+permissions:
+  contents: write
+
+jobs:
+  patch:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Add 2B logo above Search
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          p=Path('dashboard-fixed.html')
+          s=p.read_text(encoding='utf-8')
+          old='<section class="card full" style="margin-bottom:12px"><h2>🔎 Search</h2>'
+          logo='<div style="display:flex;justify-content:center;margin:0 0 12px"><div style="width:72px;height:72px;border:3px solid #ff7900;border-radius:20px;display:grid;place-items:center;background:#fff;color:#ff7900;font-size:32px;font-weight:900;letter-spacing:-2px;box-shadow:0 8px 24px rgba(255,121,0,.18)">2B</div></div>'
+          new='<section class="card full" style="margin-bottom:12px">'+logo+'<h2>🔎 Search</h2>'
+          if old in s and logo not in s:
+              p.write_text(s.replace(old,new,1),encoding='utf-8')
+          else:
+              print('Logo already present or Search marker not found; no change.')
+          PY
+      - name: Commit logo change
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add dashboard-fixed.html
+          if git diff --cached --quiet; then
+            echo "No changes to commit."
+            exit 0
+          fi
+          git commit -m "Add 2B logo above search"
+          git push
