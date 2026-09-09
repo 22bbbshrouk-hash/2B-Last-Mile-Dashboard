@@ -38,6 +38,21 @@
     (data||[]).forEach(r=>{const i=clusterFor(r.area);r.route=i>=0?cs[i].name:'Route — '+r.area;});renderDetails();drawGeoMap(groups,cs);if($('status')&&data.length)$('status').textContent='تم تحميل الداتا وتطبيق Geographic Clustering ✓';
   }
   function drawGeoMap(groups,cs){try{if(!map){map=L.map('map').setView([30.03,31.25],9);L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:19,attribution:'© OpenStreetMap'}).addTo(map);}layer.forEach(x=>x.remove());layer=[];const all=[L.latLng(DEPOTS.W100.lat,DEPOTS.W100.lng)];layer.push(L.marker(all[0]).addTo(map).bindPopup('<b>W100 · Warehouse 1</b><br>Start Depot'));groups.forEach(c=>{const pts=[L.latLng(DEPOTS.W100.lat,DEPOTS.W100.lng)];const center=CENTERS[c.i]||[30.03,31.25];uniqueOrders(c.rs).forEach((r,j)=>{const lat=r.lat>20&&r.lat<35?r.lat:center[0],lng=r.lng>20&&r.lng<40?r.lng:center[1],p=L.latLng(lat,lng);pts.push(p);all.push(p);layer.push(L.marker(p).addTo(map).bindPopup(`<b>${E(cs[c.i].name)}</b><br>Stop: ${j+1}<br>Order: ${E(r.order)}<br>Customer: ${E(r.customer)}<br>Area: ${E(r.area)}<br>Phone: ${E(r.phone)}`));});if(pts.length>1)layer.push(L.polyline(pts,{weight:4,color:COLORS[c.i]||'#ff7900'}).addTo(map));});if(all.length>1)map.fitBounds(L.latLngBounds(all),{padding:[20,20]});setTimeout(()=>map.invalidateSize(),150);}catch(e){console.error('Geo map failed',e);}}
-  function install(){try{if(typeof render!=='function'||typeof loadBuf!=='function'||typeof XLSX==='undefined'||typeof L==='undefined')return setTimeout(install,250);const originalLoadBuf=loadBuf;render=renderGeo;loadBuf=async function(buf){await originalLoadBuf(buf);renderGeo();};addCourierButton();if(data&&data.length)renderGeo();}catch(e){console.error('Geo clustering install failed',e);}}
+  function install(){
+    try{
+      if(typeof XLSX==='undefined'||typeof L==='undefined'||typeof allocate!=='function'||typeof uniqueOrders!=='function'||typeof E!=='function'||typeof renderDetails!=='function')return setTimeout(install,250);
+      addCourierButton();
+      if(typeof data!=='undefined'&&data&&data.length)renderGeo();
+      const file=$('file');
+      if(file&&!file.dataset.geoBound){
+        file.dataset.geoBound='1';
+        file.addEventListener('change',function(){setTimeout(function(){try{renderGeo();}catch(e){console.error('Geo refresh failed',e);}},700);});
+      }
+      if($('refresh')&&!$('refresh').dataset.geoBound){
+        $('refresh').dataset.geoBound='1';
+        $('refresh').addEventListener('click',function(){setTimeout(function(){try{renderGeo();}catch(e){console.error('Geo manual refresh failed',e);}},900);});
+      }
+    }catch(e){console.error('Geo clustering install failed',e);setTimeout(install,500);}
+  }
   install();
 })();
