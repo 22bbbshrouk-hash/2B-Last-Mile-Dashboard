@@ -11,6 +11,8 @@ jobs:
   deploy:
     if: github.actor != 'github-actions[bot]'
     runs-on: ubuntu-latest
+    environment:
+      name: github-pages
     steps:
       - uses: actions/checkout@v4
       - uses: actions/configure-pages@v5
