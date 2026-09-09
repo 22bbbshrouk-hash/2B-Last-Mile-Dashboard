@@ -1,0 +1,32 @@
+name: Fix UNIQUE SKU
+on:
+  push:
+    branches: [main]
+jobs:
+  fix:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+      - name: Patch SKU parser and cache version
+        shell: python
+        run: |
+          p='dashboard-fixed.html'
+          s=open(p,encoding='utf-8').read()
+          old="sku:String(val(r,['SKU','Item Code','SKU Code','Product Code','كود المنتج','رمز الصنف'])).trim()"
+          new="sku:String(val(r,['SKU','SKU Code','Product SKU','Product_Sku','Item SKU','Item_Sku','Item Code','Item_Code','Product Code','Product_Code','كود الصنف','كود المنتج','رمز الصنف','رمز المنتج','رقم الصنف'])).trim()"
+          if old not in s:
+              raise SystemExit('SKU parser target not found')
+          s=s.replace(old,new,1)
+          s=s.replace('geo-cluster.js?v=20260910','geo-cluster.js?v=20260912',1)
+          open(p,'w',encoding='utf-8').write(s)
+      - name: Remove temporary workflows and commit
+        run: |
+          rm -f .github/workflows/fix-unique-sku.yml .github/workflows/fix-route-areas.yml
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add dashboard-fixed.html .github/workflows/fix-unique-sku.yml .github/workflows/fix-route-areas.yml
+          git commit -m 'Fix UNIQUE SKU parsing and cache refresh'
+          git push
