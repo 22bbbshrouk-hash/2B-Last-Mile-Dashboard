@@ -21,7 +21,7 @@ jobs:
           curl -fsSL -H "Authorization: Bearer $GH_TOKEN" -H "Accept: application/vnd.github+json" "$base/dashboard-fixed.html?ref=main" > /tmp/dashboard.json
           curl -fsSL -H "Authorization: Bearer $GH_TOKEN" -H "Accept: application/vnd.github+json" "$base/geo-cluster.js?ref=main" > /tmp/geo.json
           python3 - <<'PY'
-          import json, base64
+          import json, base64, re
           d=json.load(open('/tmp/dashboard.json'))
           s=base64.b64decode(d['content']).decode('utf-8')
           marker='<script src="./geo-cluster.js?v=20260910"></script>'
@@ -30,7 +30,9 @@ jobs:
           new="$('share').onclick=async()=>{const stable=new URL('./',location.href).href;try{await navigator.clipboard.writeText(stable);$('status').textContent='تم نسخ رابط الداشبورد ✓'}catch{prompt('انسخي الرابط',stable)}};"
           if old in s: s=s.replace(old,new)
           open('/tmp/dashboard.txt','w').write(s); open('/tmp/dashboard_sha','w').write(d['sha'])
-          g=json.load(open('/tmp/geo.json')); geo=base64.b64decode(g['content']).decode('utf-8')
+
+          g=json.load(open('/tmp/geo.json'))
+          geo=base64.b64decode(g['content']).decode('utf-8')
           geo=geo.replace("'Zone / Area':r.area||'غير مصنف'", "Area:r.area||'غير مصنف'").replace("'اسم المندوب':''", "'Courier Name':''")
           geo=geo.replace("{name:'Zone / Area'}", "{name:'Area'}").replace("{name:'اسم المندوب'}", "{name:'Courier Name'}")
           geo=geo.replace("header:'Zone / Area',key:'Zone / Area',width:25", "header:'Area',key:'Area',width:25").replace("header:'اسم المندوب',key:'اسم المندوب',width:28", "header:'Courier Name',key:'Courier Name',width:28")
@@ -38,13 +40,70 @@ jobs:
           geo=geo.replace("{name:'Zone / Area'},{name:'Order No.'},{name:'اسم المندوب'}", "{name:'Area'},{name:'Order No.'},{name:'Courier Name'}")
           geo=geo.replace("$('kz').textContent=groups.length;", "$('kz').textContent=new Set((data||[]).map(r=>N(r.area)).filter(Boolean)).size;")
           geo=geo.replace("$('kv').textContent=vehiclePlan(totalCBM).vehicles;", "const fleetVehicles=vehiclePlan(totalCBM).vehicles; $('kv').textContent=fleetVehicles>0?fleetVehicles:(data&&data.length?Math.max(1,groups.length):0);")
-          needle="const input=row.getCell(4);input.fill={type:'pattern',pattern:'solid',fgColor:{argb:'FFFFF1E6'}};input.font={bold:true,color:{argb:'FF9A4B00'}};input.protection={locked:false};}"
-          protect="await ws.protect('2B-Courier',{selectLockedCells:false,selectUnlockedCells:true,autoFilter:true,sort:true});"
-          geo=geo.replace(protect+protect,protect)
-          if needle in geo and protect not in geo: geo=geo.replace(needle,needle+protect)
-          marker2="ws.columns=[{header:'Route',key:'Route',width:30},{header:'Area',key:'Area',width:25},{header:'Order No.',key:'Order No.',width:22},{header:'Courier Name',key:'Courier Name',width:28}];"
-          if marker2 in geo and 'pageSetup=' not in geo: geo=geo.replace(marker2,marker2+"ws.pageSetup={orientation:'landscape',fitToPage:true,fitToWidth:1,fitToHeight:0,printTitlesRow:'1:1',margins:{left:0.25,right:0.25,top:0.5,bottom:0.5,header:0.2,footer:0.2}};")
-          open('/tmp/geo.txt','w').write(geo); open('/tmp/geo_sha','w').write(g['sha'])
+
+          start=geo.find('async function downloadCourierSheet(){')
+          end=geo.find('  function renderGeo(){', start)
+          if start>=0 and end>start:
+            fn=r'''async function downloadCourierSheet(){
+      const cs=ensureClusters();
+      const grouped=rowsByCluster().map(([i,rs])=>({i,route:cs[i]?.name||('Route '+(i+1)),rows:rs.filter(r=>r.order)})).filter(x=>x.rows.length);
+      if(!grouped.length){alert('لا توجد Orders متاحة حاليًا.');return;}
+      try{
+        const ExcelJS=await loadExcelJS();
+        const wb=new ExcelJS.Workbook();
+        wb.creator='2B Egypt';wb.created=new Date();wb.properties.title='2B Courier Dispatch Board';
+        const ws=wb.addWorksheet('Courier Board',{views:[{rightToLeft:true,showGridLines:false,zoomScale:85}]});
+        const cols=grouped.map(g=>g.route);
+        ws.mergeCells(1,1,1,cols.length);
+        ws.getCell(1,1).value='2B EGYPT  |  COURIER DISPATCH BOARD';
+        ws.getCell(1,1).font={bold:true,size:16,color:{argb:'FFFFFFFF'}};
+        ws.getCell(1,1).fill={type:'pattern',pattern:'solid',fgColor:{argb:'FF111821'}};
+        ws.getCell(1,1).alignment={horizontal:'center',vertical:'middle'};
+        ws.getRow(1).height=30;
+        ws.mergeCells(2,1,2,cols.length);
+        ws.getCell(2,1).value='Manager: enter Courier Name only in the yellow cells  |  Orders and areas are generated automatically from current dashboard data';
+        ws.getCell(2,1).font={italic:true,size:9,color:{argb:'FF667085'}};
+        ws.getCell(2,1).alignment={horizontal:'center',vertical:'middle'};
+        ws.getRow(2).height=22;
+        cols.forEach((route,idx)=>{
+          const c=idx+1;
+          ws.getColumn(c).width=18;
+          const h=ws.getCell(4,c);h.value=route.replace(/^Route\s*\d+\s*[—-]\s*/,'');
+          h.font={bold:true,size:10,color:{argb:'FFFFFFFF'}};h.fill={type:'pattern',pattern:'solid',fgColor:{argb:'FFFF7900'}};h.alignment={horizontal:'center',vertical:'middle',wrapText:true};
+          h.border={top:{style:'thin',color:{argb:'FF222222'}},bottom:{style:'thin',color:{argb:'FF222222'}},left:{style:'thin',color:{argb:'FF222222'}},right:{style:'thin',color:{argb:'FF222222'}}};
+          const input=ws.getCell(5,c);input.value='';input.font={bold:true,size:11,color:{argb:'FF9A4B00'}};input.fill={type:'pattern',pattern:'solid',fgColor:{argb:'FFFFF200'}};input.alignment={horizontal:'center',vertical:'middle'};input.protection={locked:false};
+          input.border={top:{style:'thin',color:{argb:'FFD6A800'}},bottom:{style:'thin',color:{argb:'FFD6A800'}},left:{style:'thin',color:{argb:'FFD6A800'}},right:{style:'thin',color:{argb:'FFD6A800'}}};
+        });
+        ws.getRow(4).height=32;ws.getRow(5).height=28;
+        const maxRows=Math.max(...grouped.map(g=>g.rows.length));
+        for(let r=0;r<maxRows;r++){
+          const row=ws.getRow(6+r);row.height=23;
+          grouped.forEach((g,idx)=>{
+            const cell=row.getCell(idx+1),rec=g.rows[r];
+            if(rec){cell.value=String(rec.order)+(rec.area?'  |  '+String(rec.area):'');cell.alignment={horizontal:'center',vertical:'middle',wrapText:true};cell.font={bold:true,size:10,color:{argb:'FF1F2937'}};cell.fill={type:'pattern',pattern:'solid',fgColor:{argb:(r%2?'FFF8FAFC':'FFFFFFFF')}};}
+            cell.border={top:{style:'hair',color:{argb:'FFD9DEE5'}},bottom:{style:'hair',color:{argb:'FFD9DEE5'}},left:{style:'hair',color:{argb:'FFD9DEE5'}},right:{style:'hair',color:{argb:'FFD9DEE5'}}};
+          });
+        }
+        const footer=6+maxRows;
+        ws.mergeCells(footer,1,footer,cols.length);
+        ws.getCell(footer,1).value='Yellow cells = Courier Name input  •  White rows = Orders  •  2B Last Mile Operations';
+        ws.getCell(footer,1).font={bold:true,size:9,color:{argb:'FF667085'}};ws.getCell(footer,1).alignment={horizontal:'center',vertical:'middle'};ws.getRow(footer).height=22;
+        ws.freezePanes={xSplit:0,ySplit:5};
+        ws.autoFilter={from:{row:4,column:1},to:{row:5,column:cols.length}};
+        ws.pageSetup={orientation:'landscape',fitToPage:true,fitToWidth:1,fitToHeight:1,paperSize:9,printArea:`A1:${String.fromCharCode(64+Math.min(cols.length,26))}${footer}`,margins:{left:0.15,right:0.15,top:0.25,bottom:0.25,header:0.1,footer:0.1},horizontalDpi:300,verticalDpi:300};
+        ws.headerFooter={oddHeader:'&C&"Arial,Bold"2B EGYPT - COURIER DISPATCH',oddFooter:'&CPage &P of &N'};
+        await ws.protect('2B-Courier',{selectLockedCells:false,selectUnlockedCells:true});
+        const buf=await wb.xlsx.writeBuffer();
+        const blob=new Blob([buf],{type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'});
+        const url=URL.createObjectURL(blob);const a=document.createElement('a');a.href=url;a.download='2B_Courier_Dispatch_Board.xlsx';document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),1500);
+      }catch(e){console.error('Courier Board ExcelJS failed',e);alert('تعذر إنشاء شيت المندوب بالشكل الاحترافي.');}
+    }
+'''
+            geo=geo[:start]+fn+geo[end:]
+          if 'pageSetup=' not in geo:
+            marker2="ws.columns=[{header:'Route',key:'Route',width:30},{header:'Area',key:'Area',width:25},{header:'Order No.',key:'Order No.',width:22},{header:'Courier Name',key:'Courier Name',width:28}];"
+            if marker2 in geo: geo=geo.replace(marker2,marker2+"ws.pageSetup={orientation:'landscape',fitToPage:true,fitToWidth:1,fitToHeight:0,printTitlesRow:'1:1',margins:{left:0.25,right:0.25,top:0.5,bottom:0.5,header:0.2,footer:0.2}};")
+          open('/tmp/geo.txt','w').write(geo);open('/tmp/geo_sha','w').write(g['sha'])
           PY
           export DASH_CONTENT=$(base64 -w0 /tmp/dashboard.txt); export DASH_SHA=$(cat /tmp/dashboard_sha)
           python3 - <<'PY' > /tmp/dashboard-payload.json
@@ -55,6 +114,6 @@ jobs:
           export GEO_CONTENT=$(base64 -w0 /tmp/geo.txt); export GEO_SHA=$(cat /tmp/geo_sha)
           python3 - <<'PY' > /tmp/geo-payload.json
           import json,os
-          print(json.dumps({'message':'Fix KPI logic and courier sheet presentation','content':os.environ['GEO_CONTENT'],'sha':os.environ['GEO_SHA'],'branch':'main'}))
+          print(json.dumps({'message':'Improve courier dispatch board layout','content':os.environ['GEO_CONTENT'],'sha':os.environ['GEO_SHA'],'branch':'main'}))
           PY
           curl -fsSL -X PUT "$base/geo-cluster.js" -H "Authorization: Bearer $GH_TOKEN" -H "Accept: application/vnd.github+json" -H "Content-Type: application/json" --data-binary @/tmp/geo-payload.json > /tmp/geo-result.json
