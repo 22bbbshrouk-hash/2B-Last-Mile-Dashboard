@@ -7,22 +7,12 @@
 <meta http-equiv="Pragma" content="no-cache">
 <meta http-equiv="Expires" content="0">
 <title>2B Last Mile Operations Control Tower</title>
+<style>
+html,body{margin:0;padding:0;width:100%;height:100%;overflow:hidden;background:#07090d}
+iframe{display:block;width:100%;height:100%;border:0}
+</style>
 </head>
 <body>
-<script>
-(async function () {
-  try {
-    var response = await fetch('./dashboard-fixed.html?v=' + Date.now(), { cache: 'no-store' });
-    if (!response.ok) throw new Error('Dashboard file could not be loaded: ' + response.status);
-    var html = await response.text();
-    document.open();
-    document.write(html);
-    document.close();
-  } catch (error) {
-    console.error(error);
-    document.body.innerHTML = '<div style="padding:30px;font-family:Arial">Dashboard failed to load.</div>';
-  }
-}());
-</script>
+<iframe src="./dashboard-fixed.html?v=20260909" title="2B Last Mile Operations Control Tower"></iframe>
 </body>
 </html>
