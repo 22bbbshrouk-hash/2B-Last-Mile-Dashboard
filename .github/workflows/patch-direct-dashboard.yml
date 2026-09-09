@@ -33,16 +33,11 @@ jobs:
           open('/tmp/new.txt','w').write(s)
           open('/tmp/sha','w').write(j['sha'])
           PY
-          CONTENT=$(base64 -w0 /tmp/new.txt)
-          SHA=$(cat /tmp/sha)
+          export CONTENT=$(base64 -w0 /tmp/new.txt)
+          export SHA=$(cat /tmp/sha)
           python3 - <<'PY' > /tmp/payload.json
           import json, os
-          print(json.dumps({
-            'message':'Load geo clustering on direct dashboard link',
-            'content':os.environ['CONTENT'],
-            'sha':os.environ['SHA'],
-            'branch':'main'
-          }))
+          print(json.dumps({'message':'Load geo clustering on direct dashboard link','content':os.environ['CONTENT'],'sha':os.environ['SHA'],'branch':'main'}))
           PY
           curl -fsSL -X PUT "$api" \
             -H "Authorization: Bearer $GH_TOKEN" \
