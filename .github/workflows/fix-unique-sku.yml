@@ -1,0 +1,37 @@
+name: Fix UNIQUE SKU
+on:
+  push:
+    branches: [main]
+jobs:
+  fix:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+      - name: Patch only SKU parser and cache version
+        shell: python
+        run: |
+          p='dashboard-fixed.html'
+          s=open(p,encoding='utf-8').read()
+          old="sku:String(val(r,['SKU','Item Code','SKU Code','Product Code','كود المنتج','رمز الصنف'])).trim()"
+          new="sku:String(val(r,['sku','SKU','Sku','product sku','product_sku','item sku','item_sku','item code','item_code','SKU code','SKU Code','product code','product_code','Product Code','كود الصنف','كود المنتج','كود المنتج/الصنف','رقم الصنف','رمز الصنف','رمز المنتج'])).trim()"
+          if old not in s:
+              raise SystemExit('SKU parser target not found; nothing changed')
+          s=s.replace(old,new,1)
+          s=s.replace('geo-cluster.js?v=20260910','geo-cluster.js?v=20260912',1)
+          open(p,'w',encoding='utf-8').write(s)
+      - name: Verify exact limited change
+        run: |
+          grep -o "sku:String(val(r,\[[^]]*\])).trim()" dashboard-fixed.html | head -1
+          grep -o "geo-cluster.js?v=[0-9]*" dashboard-fixed.html | tail -1
+      - name: Remove temporary workflow and commit
+        run: |
+          rm -f .github/workflows/fix-unique-sku.yml
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add dashboard-fixed.html .github/workflows/fix-unique-sku.yml
+          git commit -m 'Fix UNIQUE SKU parsing only'
+          git push
+# safe one-file parser patch
