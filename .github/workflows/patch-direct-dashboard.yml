@@ -46,7 +46,11 @@ jobs:
           geo=geo.replace("header:'اسم المندوب',key:'اسم المندوب',width:28", "header:'Courier Name',key:'Courier Name',width:28")
           geo=geo.replace("String(b['Zone / Area']).localeCompare(String(a['Zone / Area']),'ar')", "String(b.Area).localeCompare(String(a.Area),'ar')")
           geo=geo.replace("{name:'Zone / Area'},{name:'Order No.'},{name:'اسم المندوب'}", "{name:'Area'},{name:'Order No.'},{name:'Courier Name'}")
-          geo=geo.replace("const input=row.getCell(4);input.fill={type:'pattern',pattern:'solid',fgColor:{argb:'FFFFF1E6'}};input.font={bold:true,color:{argb:'FF9A4B00'}};input.protection={locked:false};}", "const input=row.getCell(4);input.fill={type:'pattern',pattern:'solid',fgColor:{argb:'FFFFF1E6'}};input.font={bold:true,color:{argb:'FF9A4B00'}};input.protection={locked:false};}await ws.protect('2B-Courier',{selectLockedCells:false,selectUnlockedCells:true,autoFilter:true,sort:true});")
+          protect="await ws.protect('2B-Courier',{selectLockedCells:false,selectUnlockedCells:true,autoFilter:true,sort:true});"
+          geo=geo.replace(protect+protect,protect)
+          needle="const input=row.getCell(4);input.fill={type:'pattern',pattern:'solid',fgColor:{argb:'FFFFF1E6'}};input.font={bold:true,color:{argb:'FF9A4B00'}};input.protection={locked:false};}"
+          if needle in geo and protect not in geo:
+              geo=geo.replace(needle,needle+protect)
           open('/tmp/geo.txt','w').write(geo)
           open('/tmp/geo_sha','w').write(g['sha'])
           PY
