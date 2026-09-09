@@ -18,55 +18,43 @@ jobs:
         run: |
           set -e
           base="https://api.github.com/repos/${GITHUB_REPOSITORY}/contents"
-
           curl -fsSL -H "Authorization: Bearer $GH_TOKEN" -H "Accept: application/vnd.github+json" "$base/dashboard-fixed.html?ref=main" > /tmp/dashboard.json
           curl -fsSL -H "Authorization: Bearer $GH_TOKEN" -H "Accept: application/vnd.github+json" "$base/geo-cluster.js?ref=main" > /tmp/geo.json
-
           python3 - <<'PY'
           import json, base64
           d=json.load(open('/tmp/dashboard.json'))
           s=base64.b64decode(d['content']).decode('utf-8')
           marker='<script src="./geo-cluster.js?v=20260910"></script>'
-          if marker not in s:
-              s=s.replace('</body>', marker+'</body>')
+          if marker not in s: s=s.replace('</body>', marker+'</body>')
           old="$('share').onclick=async()=>{try{await navigator.clipboard.writeText(location.href);$('status').textContent='تم نسخ رابط الداشبورد ✓'}catch{prompt('انسخي الرابط',location.href)}};"
           new="$('share').onclick=async()=>{const stable=new URL('./',location.href).href;try{await navigator.clipboard.writeText(stable);$('status').textContent='تم نسخ رابط الداشبورد ✓'}catch{prompt('انسخي الرابط',stable)}};"
-          if old in s:
-              s=s.replace(old,new)
-          open('/tmp/dashboard.txt','w').write(s)
-          open('/tmp/dashboard_sha','w').write(d['sha'])
-
-          g=json.load(open('/tmp/geo.json'))
-          geo=base64.b64decode(g['content']).decode('utf-8')
-          geo=geo.replace("'Zone / Area':r.area||'غير مصنف'", "Area:r.area||'غير مصنف'")
-          geo=geo.replace("'اسم المندوب':''", "'Courier Name':''")
-          geo=geo.replace("{name:'Zone / Area'}", "{name:'Area'}")
-          geo=geo.replace("{name:'اسم المندوب'}", "{name:'Courier Name'}")
-          geo=geo.replace("header:'Zone / Area',key:'Zone / Area',width:25", "header:'Area',key:'Area',width:25")
-          geo=geo.replace("header:'اسم المندوب',key:'اسم المندوب',width:28", "header:'Courier Name',key:'Courier Name',width:28")
+          if old in s: s=s.replace(old,new)
+          open('/tmp/dashboard.txt','w').write(s); open('/tmp/dashboard_sha','w').write(d['sha'])
+          g=json.load(open('/tmp/geo.json')); geo=base64.b64decode(g['content']).decode('utf-8')
+          geo=geo.replace("'Zone / Area':r.area||'غير مصنف'", "Area:r.area||'غير مصنف'").replace("'اسم المندوب':''", "'Courier Name':''")
+          geo=geo.replace("{name:'Zone / Area'}", "{name:'Area'}").replace("{name:'اسم المندوب'}", "{name:'Courier Name'}")
+          geo=geo.replace("header:'Zone / Area',key:'Zone / Area',width:25", "header:'Area',key:'Area',width:25").replace("header:'اسم المندوب',key:'اسم المندوب',width:28", "header:'Courier Name',key:'Courier Name',width:28")
           geo=geo.replace("String(b['Zone / Area']).localeCompare(String(a['Zone / Area']),'ar')", "String(b.Area).localeCompare(String(a.Area),'ar')")
           geo=geo.replace("{name:'Zone / Area'},{name:'Order No.'},{name:'اسم المندوب'}", "{name:'Area'},{name:'Order No.'},{name:'Courier Name'}")
+          geo=geo.replace("$('kz').textContent=groups.length;", "$('kz').textContent=new Set((data||[]).map(r=>N(r.area)).filter(Boolean)).size;")
+          geo=geo.replace("$('kv').textContent=vehiclePlan(totalCBM).vehicles;", "const fleetVehicles=vehiclePlan(totalCBM).vehicles; $('kv').textContent=fleetVehicles>0?fleetVehicles:(data&&data.length?Math.max(1,groups.length):0);")
+          needle="const input=row.getCell(4);input.fill={type:'pattern',pattern:'solid',fgColor:{argb:'FFFFF1E6'}};input.font={bold:true,color:{argb:'FF9A4B00'}};input.protection={locked:false};}"
           protect="await ws.protect('2B-Courier',{selectLockedCells:false,selectUnlockedCells:true,autoFilter:true,sort:true});"
           geo=geo.replace(protect+protect,protect)
-          needle="const input=row.getCell(4);input.fill={type:'pattern',pattern:'solid',fgColor:{argb:'FFFFF1E6'}};input.font={bold:true,color:{argb:'FF9A4B00'}};input.protection={locked:false};}"
-          if needle in geo and protect not in geo:
-              geo=geo.replace(needle,needle+protect)
-          open('/tmp/geo.txt','w').write(geo)
-          open('/tmp/geo_sha','w').write(g['sha'])
+          if needle in geo and protect not in geo: geo=geo.replace(needle,needle+protect)
+          marker2="ws.columns=[{header:'Route',key:'Route',width:30},{header:'Area',key:'Area',width:25},{header:'Order No.',key:'Order No.',width:22},{header:'Courier Name',key:'Courier Name',width:28}];"
+          if marker2 in geo and 'pageSetup=' not in geo: geo=geo.replace(marker2,marker2+"ws.pageSetup={orientation:'landscape',fitToPage:true,fitToWidth:1,fitToHeight:0,printTitlesRow:'1:1',margins:{left:0.25,right:0.25,top:0.5,bottom:0.5,header:0.2,footer:0.2}};")
+          open('/tmp/geo.txt','w').write(geo); open('/tmp/geo_sha','w').write(g['sha'])
           PY
-
-          export DASH_CONTENT=$(base64 -w0 /tmp/dashboard.txt)
-          export DASH_SHA=$(cat /tmp/dashboard_sha)
+          export DASH_CONTENT=$(base64 -w0 /tmp/dashboard.txt); export DASH_SHA=$(cat /tmp/dashboard_sha)
           python3 - <<'PY' > /tmp/dashboard-payload.json
           import json,os
           print(json.dumps({'message':'Keep stable dashboard link','content':os.environ['DASH_CONTENT'],'sha':os.environ['DASH_SHA'],'branch':'main'}))
           PY
           curl -fsSL -X PUT "$base/dashboard-fixed.html" -H "Authorization: Bearer $GH_TOKEN" -H "Accept: application/vnd.github+json" -H "Content-Type: application/json" --data-binary @/tmp/dashboard-payload.json > /tmp/dashboard-result.json
-
-          export GEO_CONTENT=$(base64 -w0 /tmp/geo.txt)
-          export GEO_SHA=$(cat /tmp/geo_sha)
+          export GEO_CONTENT=$(base64 -w0 /tmp/geo.txt); export GEO_SHA=$(cat /tmp/geo_sha)
           python3 - <<'PY' > /tmp/geo-payload.json
           import json,os
-          print(json.dumps({'message':'Finalize courier sheet design and editable name field','content':os.environ['GEO_CONTENT'],'sha':os.environ['GEO_SHA'],'branch':'main'}))
+          print(json.dumps({'message':'Fix KPI logic and courier sheet presentation','content':os.environ['GEO_CONTENT'],'sha':os.environ['GEO_SHA'],'branch':'main'}))
           PY
           curl -fsSL -X PUT "$base/geo-cluster.js" -H "Authorization: Bearer $GH_TOKEN" -H "Accept: application/vnd.github+json" -H "Content-Type: application/json" --data-binary @/tmp/geo-payload.json > /tmp/geo-result.json
