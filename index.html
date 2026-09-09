@@ -1,1 +1,59 @@
-<!doctype html><html lang="ar" dir="rtl"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>2B Last Mile Operations Control Tower</title><meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate"><meta http-equiv="Pragma" content="no-cache"><meta http-equiv="Expires" content="0"></head><body style="margin:0;background:#07090d;color:#fff;font-family:Arial,sans-serif"><div id="boot" style="padding:30px;text-align:center">Opening 2B Dashboard…</div><script>(async function(){const boot=document.getElementById('boot');try{const r=await fetch('./dashboard-fixed.html?v='+Date.now(),{cache:'no-store'});if(!r.ok)throw new Error('Dashboard file could not be loaded: '+r.status);let html=await r.text();html=html.replace('W100:{lat:29.94022,lng:30.8846665}','W100:{lat:29.831871,lng:31.360050}');html=html.replace("L.polyline(pts,{weight:3})","L.polyline(pts,{weight:4,color:['#ff7900','#4bd7a2','#7aa2ff','#ff5f7a','#c084fc','#f59e0b','#22d3ee'][ri]||'#ff7900'})");html=html.replace("$('kv').textContent=av.vehicles+(av.short?' + shortage':'')","$('kv').textContent=av.vehicles||zr.length||0");html=html.replace("${v.vehicles} vehicle${v.vehicles!==1?'s':''}${v.short?' · fleet shortage':''}","${v.vehicles||1} vehicle${(v.vehicles||1)!==1?'s':''}${v.short?' · fleet shortage':''}");html=html.replace("${v.names.join(' + ')||'—'}${v.short?' · SHORTAGE':''}","${v.names.join(' + ')||'1 vehicle — CBM unavailable'}${v.short?' · SHORTAGE':''}");html=html.replace("function routeFor(a){let n=N(a);for(let i=0;i<ROUTES.length;i++)if(ROUTES[i][1].some(x=>N(x)===n))return i;return -1}","function routeFor(a){let n=N(a);for(let i=0;i<ROUTES.length;i++)if(ROUTES[i][1].some(x=>N(x)===n))return i;if(!String(a||'').trim())return -1;ROUTES.push(['Route '+(ROUTES.length+1)+' — '+String(a).trim(),[String(a).trim()]]);ROUTE_CENTERS.push([30.03,31.25]);ROUTE_COLORS.push(ROUTE_COLORS[ROUTE_COLORS.length%7]||'#ff7900');return ROUTES.length-1}");const css='<style>.hero2b{margin:14px 0;border:1px solid #5a361a;border-radius:16px;overflow:hidden;background:linear-gradient(135deg,#fff 0%,#fff8f1 46%,#ff7900 100%);box-shadow:0 10px 30px #0008}.hero2b svg{display:block;width:100%;height:auto}.courierBtn{background:#ff7900!important;color:#111!important}.courierModal{position:fixed;inset:0;background:#000a;display:none;align-items:center;justify-content:center;z-index:99999;padding:20px}.courierBox{width:min(440px,92vw);background:#10161e;border:1px solid #ff7900;border-radius:16px;padding:22px;box-shadow:0 20px 60px #000c}.courierBox h3{margin:0 0 7px}.courierBox p{color:#9aa6b4;font-size:12px;margin:0 0 16px}.courierBox input{width:100%;box-sizing:border-box;background:#090e14;color:#fff;border:1px solid #34404d;border-radius:9px;padding:12px;font-size:14px}.courierActions{display:flex;gap:8px;margin-top:12px}.courierActions button{flex:1}</style>';html=html.replace('</head>',css+'</head>');const banner='<div class="hero2b"><svg viewBox="0 0 1400 180" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="2B Last Mile Operations"><defs><linearGradient id="g" x1="0" x2="1"><stop stop-color="#fff"/><stop offset="1" stop-color="#fff3e7"/></linearGradient></defs><rect width="1400" height="180" fill="url(#g)"/><circle cx="1230" cy="18" r="180" fill="#ff7900" opacity=".12"/><circle cx="1330" cy="170" r="130" fill="#ff7900" opacity=".12"/><path d="M720 145 C850 80 950 130 1060 62 S1250 20 1370 70" fill="none" stroke="#ff7900" stroke-width="6" stroke-linecap="round" stroke-dasharray="10 14"/><g transform="translate(820 72)" fill="none" stroke="#ff7900" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"><path d="M0 35h115l24 25h75v-58h-45l-18-25H72v58H0z"/><circle cx="48" cy="68" r="14" fill="#fff"/><circle cx="168" cy="68" r="14" fill="#fff"/><path d="M0 35h58V0h30v35h51"/></g><text x="70" y="78" font-family="Arial,Tahoma,sans-serif" font-size="64" font-weight="900" fill="#ff7900">2B</text><text x="72" y="116" font-family="Arial,Tahoma,sans-serif" font-size="21" font-weight="700" fill="#111821">LAST MILE OPERATIONS</text><text x="72" y="145" font-family="Arial,Tahoma,sans-serif" font-size="13" fill="#5d6672">Control Tower · Delivery · Routes · Fleet</text></svg></div>';html=html.replace('<div class="bar"><div id="status" class="status">جاري تحميل آخر شيت...</div>',banner+'<div class="bar"><div id="status" class="status">جاري تحميل آخر شيت...</div>');html=html.replace('<label class="btn">📤 Upload Daily Excel<input id="file" class="file" type="file" accept=".xlsx,.xls,.csv"></label>','<label class="btn">📤 Upload Daily Excel<input id="file" class="file" type="file" accept=".xlsx,.xls,.csv"></label><button id="courierSheet" class="btn courierBtn">🚚 شيت المندوب</button>');const extra=`<div id="courierModal" class="courierModal"><div class="courierBox"><h3>🚚 شيت المندوب</h3><p>اكتب اسم المندوب فقط، وسيتم تجهيز Excel من بيانات الداشبورد الحالية.</p><input id="courierName" type="text" placeholder="اسم المندوب" autocomplete="off"><div class="courierActions"><button id="downloadCourier" class="btn">📥 تحميل Excel</button><button id="closeCourier" class="btn secondary">إلغاء</button></div></div></div><script>(function(){const b=document.getElementById('courierSheet'),m=document.getElementById('courierModal'),n=document.getElementById('courierName'),d=document.getElementById('downloadCourier'),c=document.getElementById('closeCourier');if(!b)return;b.onclick=function(){m.style.display='flex';n.value='';setTimeout(function(){n.focus()},50)};c.onclick=function(){m.style.display='none'};m.onclick=function(e){if(e.target===m)m.style.display='none'};d.onclick=function(){const name=n.value.trim();if(!name){alert('من فضلك اكتب اسم المندوب فقط');n.focus();return}if(!window.XLSX){alert('ملف Excel غير جاهز، برجاء الانتظار لحظات ثم المحاولة مرة أخرى');return}if(typeof data==='undefined'||!Array.isArray(data)){alert('الداتا لم تكتمل بعد، حاول مرة أخرى بعد تحميل الشيت');return}const rows=data.map(function(r){const area=String(r.area||'').trim();let route='غير مصنف';try{const ri=routeFor(area);if(ri>=0&&ROUTES[ri])route=ROUTES[ri][0]}catch(e){}return {'Route':route,'Zone / Area':area,'Order No.':String(r.order||'').trim(),'اسم المندوب':name}}).filter(function(r){return r['Order No.']});if(!rows.length){alert('لا توجد Orders حالياً في الداشبورد. برجاء التأكد من تحميل الشيت أولاً.');return}const wb=XLSX.utils.book_new(),ws=XLSX.utils.json_to_sheet(rows);XLSX.utils.book_append_sheet(wb,ws,'Courier Assignment');ws['!cols']=[{wch:30},{wch:24},{wch:18},{wch:24}];XLSX.writeFile(wb,'2B_Courier_Assignment.xlsx');m.style.display='none'};n.addEventListener('keydown',function(e){if(e.key==='Enter')d.click()})})();` ;html=html.replace('</body></html>',extra+'<'+'/script></body></html>');document.open();document.write(html);document.close()}catch(e){boot.innerHTML='<div style="padding:30px;color:#ffb477;font-weight:700">تعذر تشغيل الـDashboard: '+String(e.message||e)+'</div>'}})();</script></body></html>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+<meta http-equiv="Pragma" content="no-cache">
+<meta http-equiv="Expires" content="0">
+<title>2B Last Mile Operations Control Tower</title>
+</head>
+<body>
+<script>
+(async()=>{
+  const res=await fetch('./dashboard-fixed.html?v='+Date.now(),{cache:'no-store'});
+  let html=await res.text();
+  html=html.replace('</head>',`<style>
+.courierBtn{margin-left:8px}.courierModal{position:fixed;inset:0;background:rgba(0,0,0,.65);display:none;align-items:center;justify-content:center;z-index:99999}.courierModal.show{display:flex}.courierBox{background:#fff;color:#111;padding:24px;border-radius:14px;width:min(420px,90vw);box-shadow:0 20px 60px rgba(0,0,0,.35)}.courierBox h3{margin:0 0 8px}.courierBox p{margin:0 0 16px;color:#555}.courierBox input{width:100%;box-sizing:border-box;padding:12px;border:1px solid #ccc;border-radius:8px;font-size:15px}.courierActions{display:flex;gap:8px;margin-top:14px}.courierActions .btn{flex:1}.courierActions .secondary{background:#eee;color:#222}
+</style></head>`);
+  html=html.replace('<label class="btn">📤 Upload Daily Excel<input id="file" class="file" type="file" accept=".xlsx,.xls,.csv"></label>',`<label class="btn">📤 Upload Daily Excel<input id="file" class="file" type="file" accept=".xlsx,.xls,.csv"></label><button id="courierSheet" class="btn courierBtn">🚚 شيت المندوب</button>`);
+  html=html.replace('</body>',`<div id="courierModal" class="courierModal"><div class="courierBox"><h3>🚚 شيت المندوب</h3><p>اكتب اسم المندوب فقط، وسيتم تجهيز Excel من بيانات الداشبورد الحالية.</p><input id="courierName" type="text" placeholder="اسم المندوب" autocomplete="off"><div class="courierActions"><button id="downloadCourier" class="btn">📥 تحميل Excel</button><button id="closeCourier" class="btn secondary">إلغاء</button></div></div></div><script>
+(function(){
+  function initCourier(){
+    var btn=document.getElementById('courierSheet');
+    var modal=document.getElementById('courierModal');
+    var nameInput=document.getElementById('courierName');
+    var download=document.getElementById('downloadCourier');
+    var close=document.getElementById('closeCourier');
+    if(!btn||!modal||!nameInput||!download||!close)return;
+    btn.onclick=function(){modal.classList.add('show');nameInput.value='';setTimeout(function(){nameInput.focus()},50)};
+    close.onclick=function(){modal.classList.remove('show')};
+    modal.onclick=function(e){if(e.target===modal)modal.classList.remove('show')};
+    function makeFile(){
+      var name=String(nameInput.value||'').trim();
+      if(!name){alert('من فضلك اكتب اسم المندوب');nameInput.focus();return}
+      if(!window.XLSX){alert('Excel library is not ready. Please refresh and try again.');return}
+      if(typeof data==='undefined'||!Array.isArray(data)){alert('الداتا لم تكتمل بعد، حاول مرة أخرى بعد تحميل الشيت');return}
+      var rows=data.map(function(r){
+        var area=String(r.area||'').trim(),route='غير مصنف';
+        try{var ri=routeFor(area);if(ri>=0&&ROUTES[ri])route=ROUTES[ri][0]}catch(e){}
+        return {'Route':route,'Zone / Area':area,'Order No.':String(r.order||'').trim(),'اسم المندوب':name};
+      }).filter(function(r){return r['Order No.']});
+      if(!rows.length){alert('لا توجد Orders في الداتا الحالية');return}
+      var wb=XLSX.utils.book_new(),ws=XLSX.utils.json_to_sheet(rows);
+      XLSX.utils.book_append_sheet(wb,ws,'Courier Assignment');
+      ws['!cols']=[{wch:30},{wch:24},{wch:18},{wch:24}];
+      XLSX.writeFile(wb,'2B_Courier_Assignment.xlsx');
+      modal.classList.remove('show');
+    }
+    download.onclick=makeFile;
+    nameInput.addEventListener('keydown',function(e){if(e.key==='Enter')makeFile()});
+  }
+  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',initCourier);else initCourier();
+})();
+<`+'/script>');
+  document.open();document.write(html);document.close();
+})().catch(e=>{document.body.innerHTML='<div style="padding:30px;font-family:Arial">Dashboard failed to load.</div>';console.error(e)});
+</script>
+</body>
+</html>
