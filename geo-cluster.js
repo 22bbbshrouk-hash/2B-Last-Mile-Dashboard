@@ -21,19 +21,19 @@
   async function loadExcelJS(){if(window.ExcelJS)return window.ExcelJS;return new Promise((resolve,reject)=>{const s=document.createElement('script');s.src='https://cdn.jsdelivr.net/npm/exceljs@4.4.0/dist/exceljs.min.js';s.onload=()=>resolve(window.ExcelJS);s.onerror=reject;document.head.appendChild(s);});}
   async function downloadCourierSheet(){
     const cs=ensureClusters(),rows=[];
-    rowsByCluster().forEach(([i,rs])=>{const route=cs[i]?.name||('Route '+(i+1)),seen=new Set();rs.forEach(r=>{if(r.order){rows.push({Route:route,'Zone / Area':r.area||'غير مصنف','Order No.':r.order,'اسم المندوب':''});}});});
+    rowsByCluster().forEach(([i,rs])=>{const route=cs[i]?.name||('Route '+(i+1)),seen=new Set();rs.forEach(r=>{if(r.order){rows.push({Route:route,Area:r.area||'غير مصنف','Order No.':r.order,'Courier Name':''});}});});
     if(!rows.length){alert('لا توجد Orders متاحة حاليًا.');return;}
     rows.sort((a,b)=>{const ra=Number((a.Route.match(/Route (\d+)/)||[])[1]||999),rb=Number((b.Route.match(/Route (\d+)/)||[])[1]||999);return ra-rb||String(a['Zone / Area']).localeCompare(String(b['Zone / Area']),'ar')||String(a['Order No.']).localeCompare(String(b['Order No.']));});
     try{
       const ExcelJS=await loadExcelJS();const wb=new ExcelJS.Workbook();wb.creator='2B Egypt';wb.created=new Date();wb.properties.title='2B Courier Sheet';
       const ws=wb.addWorksheet('Courier Sheet');ws.views=[{state:'frozen',ySplit:1,rightToLeft:true}];
-      ws.columns=[{header:'Route',key:'Route',width:30},{header:'Zone / Area',key:'Zone / Area',width:25},{header:'Order No.',key:'Order No.',width:22},{header:'اسم المندوب',key:'اسم المندوب',width:28}];
+      ws.columns=[{header:'Route',key:'Route',width:30},{header:'Area',key:'Area',width:25},{header:'Order No.',key:'Order No.',width:22},{header:'Courier Name',key:'Courier Name',width:28}];
       rows.forEach(r=>ws.addRow(r));
       const header=ws.getRow(1);header.height=28;header.eachCell(c=>{c.font={bold:true,color:{argb:'FFFFFFFF'},size:11};c.fill={type:'pattern',pattern:'solid',fgColor:{argb:'FFFF7900'}};c.alignment={horizontal:'center',vertical:'middle'};c.border={bottom:{style:'thin',color:{argb:'FF222222'}}};});
-      for(let i=2;i<=ws.rowCount;i++){const row=ws.getRow(i);row.height=22;row.eachCell(c=>{c.alignment={vertical:'middle',horizontal:'right'};c.border={bottom:{style:'hair',color:{argb:'FFE5E7EB'}}};});const input=row.getCell(4);input.fill={type:'pattern',pattern:'solid',fgColor:{argb:'FFFFF1E6'}};input.font={bold:true,color:{argb:'FF9A4B00'}};input.protection={locked:false};}
+      for(let i=2;i<=ws.rowCount;i++){const row=ws.getRow(i);row.height=22;row.eachCell(c=>{c.alignment={vertical:'middle',horizontal:'right'};c.border={bottom:{style:'hair',color:{argb:'FFE5E7EB'}}};});const input=row.getCell(4);input.fill={type:'pattern',pattern:'solid',fgColor:{argb:'FFFFF1E6'}};input.font={bold:true,color:{argb:'FF9A4B00'}};input.protection={locked:false};}await ws.protect('2B-Courier',{selectLockedCells:false,selectUnlockedCells:true,autoFilter:true,sort:true});
       ws.autoFilter={from:'A1',to:'D'+ws.rowCount};
       ws.getColumn(1).alignment={horizontal:'right',vertical:'middle'};ws.getColumn(2).alignment={horizontal:'right',vertical:'middle'};ws.getColumn(3).alignment={horizontal:'center',vertical:'middle'};ws.getColumn(4).alignment={horizontal:'right',vertical:'middle'};
-      ws.addTable({name:'CourierTable',ref:'A1:D'+ws.rowCount,headerRow:true,totalsRow:false,columns:[{name:'Route'},{name:'Zone / Area'},{name:'Order No.'},{name:'اسم المندوب'}],style:{theme:'TableStyleMedium2',showRowStripes:true}});
+      ws.addTable({name:'CourierTable',ref:'A1:D'+ws.rowCount,headerRow:true,totalsRow:false,columns:[{name:'Route'},{name:'Area'},{name:'Order No.'},{name:'Courier Name'}],style:{theme:'TableStyleMedium2',showRowStripes:true}});
       const buf=await wb.xlsx.writeBuffer();const blob=new Blob([buf],{type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'});const url=URL.createObjectURL(blob);const a=document.createElement('a');a.href=url;a.download='2B_Courier_Sheet.xlsx';document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),1500);
     }catch(e){console.error('Courier ExcelJS failed',e);const ws=XLSX.utils.json_to_sheet(rows);ws['!cols']=[{wch:30},{wch:25},{wch:22},{wch:28}];ws['!autofilter']={ref:'A1:D'+(rows.length+1)};const wb=XLSX.utils.book_new();XLSX.utils.book_append_sheet(wb,ws,'Courier Sheet');XLSX.writeFile(wb,'2B_Courier_Sheet.xlsx');}
   }
