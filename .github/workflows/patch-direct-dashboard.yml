@@ -38,14 +38,15 @@ jobs:
 
           g=json.load(open('/tmp/geo.json'))
           geo=base64.b64decode(g['content']).decode('utf-8')
-          old_block="const key=(r.order||'')+'|'+(r.area||'');if(r.order&&!seen.has(key)){seen.add(key);rows.push({Route:route,'Zone / Area':r.area||'غير مصنف','Order No.':r.order,'Courier Name':''});}"
-          new_block="if(r.order){rows.push({Route:route,'Zone / Area':r.area||'غير مصنف','Order No.':r.order,'اسم المندوب':''});}"
-          if old_block in geo:
-              geo=geo.replace(old_block,new_block)
-          geo=geo.replace("const cs=ensureClusters(),rows=[];\n    rowsByCluster().forEach(([i,rs])=>{const route=cs[i]?.name||('Route '+(i+1)),seen=new Set();", "const cs=ensureClusters(),rows=[];\n    rowsByCluster().forEach(([i,rs])=>{const route=cs[i]?.name||('Route '+(i+1)),seen=new Set();")
-          geo=geo.replace("{name:'Courier Name'}", "{name:'اسم المندوب'}")
-          geo=geo.replace("header:'Courier Name',key:'Courier Name',width:28", "header:'اسم المندوب',key:'اسم المندوب',width:28")
-          geo=geo.replace("const input=row.getCell(4);", "const input=row.getCell(4);")
+          geo=geo.replace("'Zone / Area':r.area||'غير مصنف'", "Area:r.area||'غير مصنف'")
+          geo=geo.replace("'اسم المندوب':''", "'Courier Name':''")
+          geo=geo.replace("{name:'Zone / Area'}", "{name:'Area'}")
+          geo=geo.replace("{name:'اسم المندوب'}", "{name:'Courier Name'}")
+          geo=geo.replace("header:'Zone / Area',key:'Zone / Area',width:25", "header:'Area',key:'Area',width:25")
+          geo=geo.replace("header:'اسم المندوب',key:'اسم المندوب',width:28", "header:'Courier Name',key:'Courier Name',width:28")
+          geo=geo.replace("{name:'Area'},{name:'Order No.'},{name:'Courier Name'}", "{name:'Area'},{name:'Order No.'},{name:'Courier Name'}")
+          geo=geo.replace("{name:'Zone / Area'},{name:'Order No.'},{name:'اسم المندوب'}", "{name:'Area'},{name:'Order No.'},{name:'Courier Name'}")
+          geo=geo.replace("const input=row.getCell(4);input.fill={type:'pattern',pattern:'solid',fgColor:{argb:'FFFFF1E6'}};input.font={bold:true,color:{argb:'FF9A4B00'}};input.protection={locked:false};}", "const input=row.getCell(4);input.fill={type:'pattern',pattern:'solid',fgColor:{argb:'FFFFF1E6'}};input.font={bold:true,color:{argb:'FF9A4B00'}};input.protection={locked:false};}await ws.protect('2B-Courier',{selectLockedCells:false,selectUnlockedCells:true,autoFilter:true,sort:true});")
           open('/tmp/geo.txt','w').write(geo)
           open('/tmp/geo_sha','w').write(g['sha'])
           PY
@@ -54,7 +55,7 @@ jobs:
           export DASH_SHA=$(cat /tmp/dashboard_sha)
           python3 - <<'PY' > /tmp/dashboard-payload.json
           import json,os
-          print(json.dumps({'message':'Load geo clustering on direct dashboard link','content':os.environ['DASH_CONTENT'],'sha':os.environ['DASH_SHA'],'branch':'main'}))
+          print(json.dumps({'message':'Keep stable dashboard link','content':os.environ['DASH_CONTENT'],'sha':os.environ['DASH_SHA'],'branch':'main'}))
           PY
           curl -fsSL -X PUT "$base/dashboard-fixed.html" -H "Authorization: Bearer $GH_TOKEN" -H "Accept: application/vnd.github+json" -H "Content-Type: application/json" --data-binary @/tmp/dashboard-payload.json > /tmp/dashboard-result.json
 
@@ -62,6 +63,6 @@ jobs:
           export GEO_SHA=$(cat /tmp/geo_sha)
           python3 - <<'PY' > /tmp/geo-payload.json
           import json,os
-          print(json.dumps({'message':'Finalize courier sheet columns','content':os.environ['GEO_CONTENT'],'sha':os.environ['GEO_SHA'],'branch':'main'}))
+          print(json.dumps({'message':'Finalize courier sheet design and editable name field','content':os.environ['GEO_CONTENT'],'sha':os.environ['GEO_SHA'],'branch':'main'}))
           PY
           curl -fsSL -X PUT "$base/geo-cluster.js" -H "Authorization: Bearer $GH_TOKEN" -H "Accept: application/vnd.github+json" -H "Content-Type: application/json" --data-binary @/tmp/geo-payload.json > /tmp/geo-result.json
