@@ -13,41 +13,27 @@
 (async()=>{
   const res=await fetch('./dashboard-fixed.html?v='+Date.now(),{cache:'no-store'});
   let html=await res.text();
-  html=html.replace('</head>',`<style>
-.courierBtn{margin-left:8px}.courierModal{position:fixed;inset:0;background:rgba(0,0,0,.65);display:none;align-items:center;justify-content:center;z-index:99999}.courierModal.show{display:flex}.courierBox{background:#fff;color:#111;padding:24px;border-radius:14px;width:min(420px,90vw);box-shadow:0 20px 60px rgba(0,0,0,.35)}.courierBox h3{margin:0 0 8px}.courierBox p{margin:0 0 16px;color:#555}.courierBox input{width:100%;box-sizing:border-box;padding:12px;border:1px solid #ccc;border-radius:8px;font-size:15px}.courierActions{display:flex;gap:8px;margin-top:14px}.courierActions .btn{flex:1}.courierActions .secondary{background:#eee;color:#222}
-</style></head>`);
+  html=html.replace('</head>',`<style>.courierBtn{margin-left:8px}</style></head>`);
   html=html.replace('<label class="btn">📤 Upload Daily Excel<input id="file" class="file" type="file" accept=".xlsx,.xls,.csv"></label>',`<label class="btn">📤 Upload Daily Excel<input id="file" class="file" type="file" accept=".xlsx,.xls,.csv"></label><button id="courierSheet" class="btn courierBtn">🚚 شيت المندوب</button>`);
-  html=html.replace('</body>',`<div id="courierModal" class="courierModal"><div class="courierBox"><h3>🚚 شيت المندوب</h3><p>اكتب اسم المندوب فقط، وسيتم تجهيز Excel من بيانات الداشبورد الحالية.</p><input id="courierName" type="text" placeholder="اسم المندوب" autocomplete="off"><div class="courierActions"><button id="downloadCourier" class="btn">📥 تحميل Excel</button><button id="closeCourier" class="btn secondary">إلغاء</button></div></div></div><script>
+  html=html.replace('</body>',`<script>
 (function(){
   function initCourier(){
     var btn=document.getElementById('courierSheet');
-    var modal=document.getElementById('courierModal');
-    var nameInput=document.getElementById('courierName');
-    var download=document.getElementById('downloadCourier');
-    var close=document.getElementById('closeCourier');
-    if(!btn||!modal||!nameInput||!download||!close)return;
-    btn.onclick=function(){modal.classList.add('show');nameInput.value='';setTimeout(function(){nameInput.focus()},50)};
-    close.onclick=function(){modal.classList.remove('show')};
-    modal.onclick=function(e){if(e.target===modal)modal.classList.remove('show')};
-    function makeFile(){
-      var name=String(nameInput.value||'').trim();
-      if(!name){alert('من فضلك اكتب اسم المندوب');nameInput.focus();return}
+    if(!btn)return;
+    btn.onclick=function(){
       if(!window.XLSX){alert('Excel library is not ready. Please refresh and try again.');return}
       if(typeof data==='undefined'||!Array.isArray(data)){alert('الداتا لم تكتمل بعد، حاول مرة أخرى بعد تحميل الشيت');return}
       var rows=data.map(function(r){
         var area=String(r.area||'').trim(),route='غير مصنف';
         try{var ri=routeFor(area);if(ri>=0&&ROUTES[ri])route=ROUTES[ri][0]}catch(e){}
-        return {'Route':route,'Zone / Area':area,'Order No.':String(r.order||'').trim(),'اسم المندوب':name};
+        return {'Route':route,'Zone / Area':area,'Order No.':String(r.order||'').trim(),'اسم المندوب':''};
       }).filter(function(r){return r['Order No.']});
       if(!rows.length){alert('لا توجد Orders في الداتا الحالية');return}
       var wb=XLSX.utils.book_new(),ws=XLSX.utils.json_to_sheet(rows);
       XLSX.utils.book_append_sheet(wb,ws,'Courier Assignment');
       ws['!cols']=[{wch:30},{wch:24},{wch:18},{wch:24}];
       XLSX.writeFile(wb,'2B_Courier_Assignment.xlsx');
-      modal.classList.remove('show');
-    }
-    download.onclick=makeFile;
-    nameInput.addEventListener('keydown',function(e){if(e.key==='Enter')makeFile()});
+    };
   }
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',initCourier);else initCourier();
 })();
