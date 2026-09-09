@@ -17,41 +17,41 @@
   html=html.replace('<label class="btn">📤 Upload Daily Excel<input id="file" class="file" type="file" accept=".xlsx,.xls,.csv"></label>',`<label class="btn">📤 Upload Daily Excel<input id="file" class="file" type="file" accept=".xlsx,.xls,.csv"></label><button id="courierSheet" class="btn courierBtn">🚚 شيت المندوب</button>`);
   html=html.replace('</body>',`<script>
 (function(){
-  function loadStyleExcel(callback){
-    if(window.XLSXStyle){callback(window.XLSXStyle);return}
-    var s=document.createElement('script');
-    s.src='https://cdn.jsdelivr.net/npm/xlsx-js-style@1.2.0/dist/xlsx.bundle.js';
-    s.onload=function(){window.XLSXStyle=window.XLSX;callback(window.XLSXStyle)};
-    s.onerror=function(){callback(null)};
-    document.head.appendChild(s);
-  }
+  function normGeo(v){return String(v||'').normalize('NFKC').toLowerCase().replace(/[\\u064B-\\u065F\\u0670]/g,'').replace(/[أإآ]/g,'ا').replace(/ى/g,'ي').replace(/ة/g,'ه').replace(/[\\s_\\-()./]/g,'').trim()}
+  var GEO=[
+    ['Route 1 — East New Cities',['العبور','الشروق','مدينتي','بدر','العاشر من رمضان','مدينة المستقبل','المستقبل']],
+    ['Route 2 — North Cairo',['شبرا مصر','شبرا','رمسيس','باب الشعرية','بولاق','الزاوية','حدائق القبة','الأميرية','روض الفرج','الساحل','الشرابية']],
+    ['Route 3 — East Cairo',['مدينة نصر','المقطم','قطامية','القطامية']],
+    ['Route 4 — Heliopolis',['مصر الجديدة','مصر الجديده','النزهة','النزهه','روكسي','جسر السويس','الزيتون','عين شمس','عزبة النخل','عزبه النخل']],
+    ['Route 5 — New Cairo',['التجمع الأول','التجمع الاول','التجمع الثالث','التجمع الخامس','التجمع','القاهرة الجديدة','القاهره الجديده','الرحاب']],
+    ['Route 6 — Giza',['الجيزة','الجيزه','فيصل','الهرم','العمرانية','العمرانيه','أبو النمرس','ابو النمرس','المنيب','الدقي','المهندسين','العجوزة','العجوزه','بولاق الدكرور','كرداسة','كرداسه','صفط']],
+    ['Route 7 — South Cairo',['المعادي','المعادى','زهراء المعادي','زهراء المعادى','مصر القديمة','مصر القديمه','السيدة زينب','السيده زينب','الخليفة','الخليفه','دار السلام','البساتين']],
+    ['Route 8 — South Helwan',['حلوان','15 مايو','المعصرة','المعصره','طرة','التبين']],
+    ['Route 9 — West',['حدائق الأهرام','حدائق اهرام','أكتوبر','6 أكتوبر','السادس من أكتوبر','اكتوبر','الشيخ زايد','مدينة الشيخ زايد','زايد','أكتوبر الجديدة','اكتوبر الجديدة','الواحات']],
+    ['Route 10 — Delta / North Egypt',['طنطا','المحلة','المحله','كفر الشيخ','دمنهور','رشيد','إدكو','ادكو','دمياط','رأس البر','راس البر','المنصورة','المنصوره','ميت غمر','الدقهلية','الدقهليه','البحيرة','البحيره','الغربية','الغربيه']],
+    ['Route 11 — Canal / Upper Egypt',['الإسماعيلية','الاسماعيلية','بورسعيد','السويس','العريش','شمال سيناء','جنوب سيناء','شرم الشيخ','دهب','نويبع','رفح','الطور','بني سويف','الفيوم','المنيا','أسيوط','اسيوط','سوهاج','قنا','الأقصر','الاقصر','أسوان','اسوان','الوادي الجديد','البحر الأحمر','الغردقة','الغردقه','مرسى علم']]
+  ];
+  ROUTES.length=0;GEO.forEach(function(g){ROUTES.push([g[0],g[1]])});
+  function geoRoute(a){var n=normGeo(a);for(var i=0;i<GEO.length;i++)for(var j=0;j<GEO[i][1].length;j++){var x=normGeo(GEO[i][1][j]);if(n===x||n.indexOf(x)!==-1)return i}return -1}
+  routeFor=function(a){return geoRoute(a)};
+  var oldRender=render;
+  render=function(){
+    oldRender();
+    var m=new Map;
+    data.forEach(function(r){var ri=geoRoute(r.area);if(ri<0)return;if(!m.has(ri))m.set(ri,{orders:new Set(),areas:new Set()});if(r.order)m.get(ri).orders.add(r.order);if(r.area)m.get(ri).areas.add(r.area)});
+    var arr=[...m].sort(function(a,b){return a[0]-b[0]}),mx=Math.max(1,...arr.map(function(x){return x[1].orders.size}));
+    $('rank').innerHTML=arr.map(function(x){var ri=x[0],o=x[1].orders.size,areas=[...x[1].areas].sort(function(a,b){return a.localeCompare(b,'ar')});return '<div class="area"><div><b>'+E(ROUTES[ri][0])+'</b><div class="muted">'+areas.map(E).join(' · ')+'</div></div><div class="bg"><div class="fill" style="width:'+(o/mx*100)+'%"></div></div><b>'+o+'</b></div>'}).join('')||'<div class="empty">لا توجد بيانات</div>';
+  };
+})();
+(function(){
+  function loadStyleExcel(callback){if(window.XLSXStyle){callback(window.XLSXStyle);return}var s=document.createElement('script');s.src='https://cdn.jsdelivr.net/npm/xlsx-js-style@1.2.0/dist/xlsx.bundle.js';s.onload=function(){window.XLSXStyle=window.XLSX;callback(window.XLSXStyle)};s.onerror=function(){callback(null)};document.head.appendChild(s)}
   function cleanArea(v){return String(v||'').replace(/\\s+/g,' ').trim()}
-  function norm(v){return cleanArea(v).normalize('NFKC').toLowerCase().replace(/[أإآ]/g,'ا').replace(/ى/g,'ي').replace(/ة/g,'ه').replace(/[\\s_\\-()./]/g,'')}
-  function courierRoute(area){
-    var n=norm(area);
-    var groups=[
-      ['Route 1 — East',['العبور','الشروق','مدينتي','بدر','العاشرمنرمضان','مدينةالمستقبل','المستقبل','الزقازيق','بلبيس','فاقوس','الشرقية','القنايات','ابوكبير']],
-      ['Route 2 — North / Cairo',['شبرا','رمسيس','بابالشعرية','بولاق','الزاوية','حدائقالقبة','الاميرية','عينشمس','المطرية','المرج','السلام','مدينةالسلام','الوراق','بشتيل','امبابة','روضالفرج','الساحل','الشرابية','قليوب','شبراالخيمة','القليوبية','الخانكة','الخصوص']],
-      ['Route 3 — New Cairo → Giza',['التجمع','الرحاب','القاهرةالجديدة','القاهرهالجديده','الجيزة','الجيزه','فيصل','الهرم','العمرانية','العمرانيه','ابوالنمرس','المنيب','الدقي','المهندسين','العجوزة','العجوزه','بولاقالدكرور','بولاقدكرور','صفط','كرداسة','كرداسه']],
-      ['Route 4 — South',['المعادي','المعادى','زهراءالمعادي','زهراءالمعادى','حلوان','15مايو','مصرالقديمة','مصرالقديمه','السيدةزينب','السيدهزينب','الخليفة','الخليفه','قسمالخليفة','قسمالخليفه','دارالسلام','البساتين','المعصرة','المعصره','طرة','التبين']],
-      ['Route 5 — West',['حدائقاهرام','حدائقالأهرام','اكتوبر','6اكتوبر','السادسمنأكتوبر','الشيخزايد','زايد','اكتوبرالجديدة','اكتوبرالجديده','الواحات']],
-      ['Route 6 — East Cairo',['مدينةنصر','مدينهنصر','المقطم','قطامية','القطامية']],
-      ['Route 7 — Heliopolis / East',['هليوبوليس','مصرالجديدة','مصرالجديده','النزهة','النزهه','روكسي','جسرالسويس','الزيتون','عينشمس','عزبةالنخل','عزبهالنخل']],
-      ['Route 8 — Delta / North Egypt',['طنطا','المحلة','المحله','كفرالشيخ','دمنهور','رشيد','ادكو','دمياط','رأسالبر','راس البر','المنصورة','المنصوره','ميتغمر','الدقهلية','الدقهليه','البحيرة','البحيره','الغربية','الغربيه']],
-      ['Route 9 — Canal / Sinai',['الاسماعيلية','الإسماعيلية','بورسعيد','السويس','العريش','شمالسيناء','جنوبسيناء','شرمالشيخ','دهب','نويبع','رفح','الطور']],
-      ['Route 10 — Upper Egypt',['بني سويف','بني سويف','الفيوم','المنيا','اسيوط','أسيوط','سوهاج','قنا','الاقصر','الأقصر','اسوان','أسوان','الواديالجديد','البحرالاحمر','الغردقه','الغردقة','مرسىعلم']]
-    ];
-    for(var i=0;i<groups.length;i++)for(var j=0;j<groups[i][1].length;j++)if(n.indexOf(norm(groups[i][1][j]))!==-1)return groups[i][0];
-    try{var ri=routeFor(cleanArea(area));if(ri>=0&&ROUTES[ri])return ROUTES[ri][0]}catch(e){}
-    return 'Route — Other Egypt';
-  }
   function buildCourierSheet(X){
     if(!X){alert('Excel formatting library could not be loaded. Please refresh and try again.');return}
     if(typeof data==='undefined'||!Array.isArray(data)){alert('الداتا لم تكتمل بعد، حاول مرة أخرى بعد تحميل الشيت');return}
-    var rows=data.map(function(r){var area=cleanArea(r.area);return {'Route':courierRoute(area),'Zone / Area':area,'Order No.':String(r.order||'').trim(),'اسم المندوب':''}}).filter(function(r){return r['Order No.']});
+    var rows=data.map(function(r){var area=cleanArea(r.area),ri=routeFor(area);return {'Route':ri>=0&&ROUTES[ri]?ROUTES[ri][0]:'Route — Other Egypt','Zone / Area':area,'Order No.':String(r.order||'').trim(),'اسم المندوب':''}}).filter(function(r){return r['Order No.']});
     if(!rows.length){alert('لا توجد Orders في الداتا الحالية');return}
-    var wb=X.utils.book_new(),ws=X.utils.json_to_sheet(rows,{header:['Route','Zone / Area','Order No.','اسم المندوب']});
-    X.utils.book_append_sheet(wb,ws,'Courier Assignment');
+    var wb=X.utils.book_new(),ws=X.utils.json_to_sheet(rows,{header:['Route','Zone / Area','Order No.','اسم المندوب']});X.utils.book_append_sheet(wb,ws,'Courier Assignment');
     ws['!cols']=[{wch:30},{wch:28},{wch:18},{wch:24}];ws['!autofilter']={ref:'A1:D'+(rows.length+1)};ws['!rows']=[{hpt:28}];
     var headerStyle={fill:{patternType:'solid',fgColor:{rgb:'FF1A1F26'}},font:{name:'Arial',sz:11,bold:true,color:{rgb:'FFFFFFFF'}},alignment:{horizontal:'center',vertical:'center'},border:{top:{style:'thin',color:{rgb:'FFFF7900'}},bottom:{style:'thin',color:{rgb:'FFFF7900'}},left:{style:'thin',color:{rgb:'FF3A424D'}},right:{style:'thin',color:{rgb:'FF3A424D'}}}};
     var bodyBorder={border:{top:{style:'thin',color:{rgb:'FFE1E5EA'}},bottom:{style:'thin',color:{rgb:'FFE1E5EA'}},left:{style:'thin',color:{rgb:'FFE1E5EA'}},right:{style:'thin',color:{rgb:'FFE1E5EA'}}},alignment:{vertical:'center'}};
