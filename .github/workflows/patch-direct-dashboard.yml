@@ -12,17 +12,20 @@ jobs:
     if: github.actor != 'github-actions[bot]'
     runs-on: ubuntu-latest
     steps:
-      - name: Patch dashboard-fixed.html
+      - name: Patch dashboard and courier sheet
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           set -e
-          api="https://api.github.com/repos/${GITHUB_REPOSITORY}/contents/dashboard-fixed.html"
-          curl -fsSL -H "Authorization: Bearer $GH_TOKEN" -H "Accept: application/vnd.github+json" "$api?ref=main" > /tmp/file.json
+          base="https://api.github.com/repos/${GITHUB_REPOSITORY}/contents"
+
+          curl -fsSL -H "Authorization: Bearer $GH_TOKEN" -H "Accept: application/vnd.github+json" "$base/dashboard-fixed.html?ref=main" > /tmp/dashboard.json
+          curl -fsSL -H "Authorization: Bearer $GH_TOKEN" -H "Accept: application/vnd.github+json" "$base/geo-cluster.js?ref=main" > /tmp/geo.json
+
           python3 - <<'PY'
           import json, base64
-          j=json.load(open('/tmp/file.json'))
-          s=base64.b64decode(j['content']).decode('utf-8')
+          d=json.load(open('/tmp/dashboard.json'))
+          s=base64.b64decode(d['content']).decode('utf-8')
           marker='<script src="./geo-cluster.js?v=20260910"></script>'
           if marker not in s:
               s=s.replace('</body>', marker+'</body>')
@@ -30,17 +33,35 @@ jobs:
           new="$('share').onclick=async()=>{const stable=new URL('./',location.href).href;try{await navigator.clipboard.writeText(stable);$('status').textContent='تم نسخ رابط الداشبورد ✓'}catch{prompt('انسخي الرابط',stable)}};"
           if old in s:
               s=s.replace(old,new)
-          open('/tmp/new.txt','w').write(s)
-          open('/tmp/sha','w').write(j['sha'])
+          open('/tmp/dashboard.txt','w').write(s)
+          open('/tmp/dashboard_sha','w').write(d['sha'])
+
+          g=json.load(open('/tmp/geo.json'))
+          geo=base64.b64decode(g['content']).decode('utf-8')
+          old_block="const key=(r.order||'')+'|'+(r.area||'');if(r.order&&!seen.has(key)){seen.add(key);rows.push({Route:route,'Zone / Area':r.area||'غير مصنف','Order No.':r.order,'Courier Name':''});}"
+          new_block="if(r.order){rows.push({Route:route,'Zone / Area':r.area||'غير مصنف','Order No.':r.order,'اسم المندوب':''});}"
+          if old_block in geo:
+              geo=geo.replace(old_block,new_block)
+          geo=geo.replace("const cs=ensureClusters(),rows=[];\n    rowsByCluster().forEach(([i,rs])=>{const route=cs[i]?.name||('Route '+(i+1)),seen=new Set();", "const cs=ensureClusters(),rows=[];\n    rowsByCluster().forEach(([i,rs])=>{const route=cs[i]?.name||('Route '+(i+1)),seen=new Set();")
+          geo=geo.replace("{name:'Courier Name'}", "{name:'اسم المندوب'}")
+          geo=geo.replace("header:'Courier Name',key:'Courier Name',width:28", "header:'اسم المندوب',key:'اسم المندوب',width:28")
+          geo=geo.replace("const input=row.getCell(4);", "const input=row.getCell(4);")
+          open('/tmp/geo.txt','w').write(geo)
+          open('/tmp/geo_sha','w').write(g['sha'])
           PY
-          export CONTENT=$(base64 -w0 /tmp/new.txt)
-          export SHA=$(cat /tmp/sha)
-          python3 - <<'PY' > /tmp/payload.json
-          import json, os
-          print(json.dumps({'message':'Load geo clustering on direct dashboard link','content':os.environ['CONTENT'],'sha':os.environ['SHA'],'branch':'main'}))
+
+          export DASH_CONTENT=$(base64 -w0 /tmp/dashboard.txt)
+          export DASH_SHA=$(cat /tmp/dashboard_sha)
+          python3 - <<'PY' > /tmp/dashboard-payload.json
+          import json,os
+          print(json.dumps({'message':'Load geo clustering on direct dashboard link','content':os.environ['DASH_CONTENT'],'sha':os.environ['DASH_SHA'],'branch':'main'}))
           PY
-          curl -fsSL -X PUT "$api" \
-            -H "Authorization: Bearer $GH_TOKEN" \
-            -H "Accept: application/vnd.github+json" \
-            -H "Content-Type: application/json" \
-            --data-binary @/tmp/payload.json
+          curl -fsSL -X PUT "$base/dashboard-fixed.html" -H "Authorization: Bearer $GH_TOKEN" -H "Accept: application/vnd.github+json" -H "Content-Type: application/json" --data-binary @/tmp/dashboard-payload.json > /tmp/dashboard-result.json
+
+          export GEO_CONTENT=$(base64 -w0 /tmp/geo.txt)
+          export GEO_SHA=$(cat /tmp/geo_sha)
+          python3 - <<'PY' > /tmp/geo-payload.json
+          import json,os
+          print(json.dumps({'message':'Finalize courier sheet columns','content':os.environ['GEO_CONTENT'],'sha':os.environ['GEO_SHA'],'branch':'main'}))
+          PY
+          curl -fsSL -X PUT "$base/geo-cluster.js" -H "Authorization: Bearer $GH_TOKEN" -H "Accept: application/vnd.github+json" -H "Content-Type: application/json" --data-binary @/tmp/geo-payload.json > /tmp/geo-result.json
