@@ -1,0 +1,40 @@
+name: Fix Daily Follow-up feedback
+
+on:
+  push:
+    branches: [main]
+
+permissions:
+  contents: write
+
+jobs:
+  patch:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Patch dashboard feedback handling
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          p=Path('dashboard-fixed.html')
+          s=p.read_text(encoding='utf-8')
+          old="feedback:String(val(r,['Customer Feedback','Customer feedback','Feedback','Client Feedback','ملاحظات العميل'])).trim()"
+          new="feedback:String(val(r,['Customer Feedback','Customer feedback','Feedback','Client Feedback','Customer Comment','Customer Comments','Comment','Comments','Customer Note','Customer Notes','Remarks','Reason','Customer Reason','Delivery Reason','Status Reason','Cause','ملاحظات العميل','ملاحظات','تعليق العميل','سبب الرفض','سبب الالغاء','سبب عدم التسليم'])).trim()"
+          if old not in s:
+              raise SystemExit('feedback parser marker not found')
+          s=s.replace(old,new,1)
+          s=s.replace('./geo-cluster.js?v=20260912','./geo-cluster.js?v=20260913',1)
+          p.write_text(s,encoding='utf-8')
+          PY
+      - name: Commit dashboard fix
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add dashboard-fixed.html
+          if git diff --cached --quiet; then
+            echo "No changes to commit."
+            exit 0
+          fi
+          git commit -m "Fix Daily Follow-up feedback rendering"
+          git push
