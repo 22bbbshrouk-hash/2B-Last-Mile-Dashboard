@@ -1,0 +1,48 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>2B Movement & Logistics Dashboard | November 2025</title>
+<style>
+:root{--orange:#f47721;--ink:#171717;--muted:#737373;--line:#e8e8e8;--bg:#f5f6f7}*{box-sizing:border-box}body{margin:0;background:var(--bg);font:14px/1.45 Arial,Helvetica,sans-serif;color:var(--ink)}header{background:#171717;color:#fff;padding:24px max(20px,calc((100% - 1240px)/2));border-bottom:5px solid var(--orange)}.brand{color:var(--orange);font-weight:900;letter-spacing:2px;font-size:13px}.head{display:flex;justify-content:space-between;gap:20px;align-items:center;flex-wrap:wrap}h1{font-size:clamp(23px,3vw,34px);margin:8px 0 4px}header p{margin:0;color:#ccc}.period{border:1px solid #555;border-radius:8px;padding:10px 14px;color:#eee}main{max-width:1240px;margin:24px auto;padding:0 18px 36px}.toolbar{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:16px}.toolbar p{color:var(--muted);margin:0}button{background:var(--orange);color:#fff;border:0;border-radius:7px;padding:11px 15px;font-weight:700;cursor:pointer}button.secondary{background:#222}.grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:14px}.card{background:#fff;border:1px solid var(--line);border-radius:12px;padding:18px;box-shadow:0 2px 8px #00000005}.kpi .label{color:var(--muted);font-size:12px;text-transform:uppercase;letter-spacing:.6px}.kpi .value{font-size:clamp(22px,2.5vw,30px);font-weight:800;margin:8px 0 3px}.accent{color:var(--orange)}.sub{font-size:12px;color:var(--muted)}.twocol{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-top:14px}.card h2{font-size:17px;margin:0 0 5px}.card .desc{color:var(--muted);font-size:12px;margin:0 0 18px}.bars{display:flex;flex-direction:column;gap:15px}.barrow{display:grid;grid-template-columns:minmax(100px,145px) 1fr 80px;gap:10px;align-items:center}.barname{font-size:13px}.track{height:12px;background:#f0f0f0;border-radius:8px;overflow:hidden}.fill{height:100%;background:var(--orange);border-radius:8px}.barvalue{text-align:right;font-weight:700;font-variant-numeric:tabular-nums}.expense-layout{display:flex;align-items:center;gap:26px;flex-wrap:wrap}.donut{width:190px;height:190px;flex:0 0 190px;border-radius:50%;background:conic-gradient(#f47721 0 35%,#252525 35% 59%,#8d8d8d 59% 75%,#c7c7c7 75% 87%,#e0e0e0 87% 100%);position:relative}.donut:after{content:"EGP 400,766";position:absolute;inset:34px;background:#fff;border-radius:50%;display:flex;align-items:center;justify-content:center;text-align:center;font-weight:800;font-size:15px}.legend{display:grid;gap:10px;min-width:180px;flex:1}.leg{display:flex;align-items:center;justify-content:space-between;gap:12px}.dot{width:10px;height:10px;border-radius:3px;display:inline-block;margin-right:8px}.foot{color:var(--muted);font-size:11px;text-align:right;margin-top:18px}.notice{border-left:3px solid var(--orange);background:#fff7f1;padding:12px 14px;border-radius:0 8px 8px 0;margin-top:14px;font-size:12px;color:#5f4a3b}@media(max-width:850px){.grid{grid-template-columns:repeat(2,minmax(0,1fr))}.twocol{grid-template-columns:1fr}}@media(max-width:460px){.grid{grid-template-columns:1fr}.barrow{grid-template-columns:95px 1fr 65px}.donut{width:160px;height:160px;flex-basis:160px}.donut:after{inset:28px;font-size:13px}}@media print{body{background:white}.toolbar button{display:none}main{max-width:none;margin:12px auto}.card{break-inside:avoid;box-shadow:none}header{padding:18px 24px}.grid{grid-template-columns:repeat(4,1fr)}.twocol{grid-template-columns:1fr 1fr}}
+</style></head><body>
+<header><div class="head"><div><div class="brand">2B EGYPT · OPERATIONS</div><h1>Movement & Logistics Dashboard</h1><p>Fleet activity, operating costs and cost efficiency</p></div><div class="period"><b>REPORTING PERIOD</b><br>November 2025</div></div></header>
+<main><div class="toolbar"><p>Management overview · Currency: EGP · Source: November 2025 movement workbook and October/November summary PDF</p><button onclick="window.print()">Download / Save as PDF</button></div>
+<section class="grid">
+<div class="card kpi"><div class="label">Total operating cost</div><div class="value accent">400,766</div><div class="sub">Operating expenses + salaries</div></div>
+<div class="card kpi"><div class="label">Total trips</div><div class="value">401</div><div class="sub">Reported trips</div></div>
+<div class="card kpi"><div class="label">Total points</div><div class="value">3,042</div><div class="sub">Reported delivery points</div></div>
+<div class="card kpi"><div class="label">Distance covered</div><div class="value">73,646 <span style="font-size:15px">km</span></div><div class="sub">Reported total kilometers</div></div>
+<div class="card kpi"><div class="label">Salary cost</div><div class="value">107,195</div><div class="sub">Included in total cost and ratios</div></div>
+<div class="card kpi"><div class="label">Operating expenses</div><div class="value">293,571</div><div class="sub">Excluding salaries</div></div>
+<div class="card kpi"><div class="label">Cost per trip</div><div class="value">999.42</div><div class="sub">Total cost ÷ 401 trips</div></div>
+<div class="card kpi"><div class="label">Cost per point</div><div class="value">131.74</div><div class="sub">Total cost ÷ 3,042 points</div></div>
+</section>
+<section class="twocol">
+<div class="card"><h2>Activity mix</h2><p class="desc">Trips by movement category · reported activity rows</p><div class="bars">
+<div class="barrow"><span class="barname">Online</span><div class="track"><div class="fill" style="width:100%"></div></div><span class="barvalue">194</span></div>
+<div class="barrow"><span class="barname">Branches</span><div class="track"><div class="fill" style="width:79.9%"></div></div><span class="barvalue">155</span></div>
+<div class="barrow"><span class="barname">Wholesale</span><div class="track"><div class="fill" style="width:11.4%"></div></div><span class="barvalue">22</span></div>
+<div class="barrow"><span class="barname">Purchases</span><div class="track"><div class="fill" style="width:10.3%"></div></div><span class="barvalue">20</span></div>
+<div class="barrow"><span class="barname">Corporate</span><div class="track"><div class="fill" style="width:5.2%"></div></div><span class="barvalue">10</span></div>
+</div><div class="notice">The activity categories sum to 401 trips and 3,042 points as reported in the source summary.</div></div>
+<div class="card"><h2>Cost structure</h2><p class="desc">Operating expenses and salary allocation · EGP</p><div class="expense-layout"><div class="donut" aria-label="Cost structure chart"></div><div class="legend">
+<div class="leg"><span><i class="dot" style="background:#f47721"></i>Diesel</span><b>140,038</b></div>
+<div class="leg"><span><i class="dot" style="background:#252525"></i>Salaries</span><b>107,195</b></div>
+<div class="leg"><span><i class="dot" style="background:#8d8d8d"></i>Handling</span><b>60,710</b></div>
+<div class="leg"><span><i class="dot" style="background:#c7c7c7"></i>Maintenance</span><b>49,425</b></div>
+<div class="leg"><span><i class="dot" style="background:#e0e0e0"></i>Other costs*</span><b>43,398</b></div>
+</div></div><div class="notice">Salary is included in total cost and unit-cost KPIs. *Other costs combine oil, fines and card expenses.</div></div>
+</section>
+<section class="twocol">
+<div class="card"><h2>Expense breakdown</h2><p class="desc">All categories from the reported movement summary · EGP</p><div class="bars">
+<div class="barrow"><span class="barname">Diesel / سولار</span><div class="track"><div class="fill" style="width:100%"></div></div><span class="barvalue">140,038</span></div>
+<div class="barrow"><span class="barname">Handling / مشالات</span><div class="track"><div class="fill" style="width:43.4%"></div></div><span class="barvalue">60,710</span></div>
+<div class="barrow"><span class="barname">Maintenance</span><div class="track"><div class="fill" style="width:35.3%"></div></div><span class="barvalue">49,425</span></div>
+<div class="barrow"><span class="barname">Oil</span><div class="track"><div class="fill" style="width:22.8%"></div></div><span class="barvalue">31,858</span></div>
+<div class="barrow"><span class="barname">Fines</span><div class="track"><div class="fill" style="width:5%"></div></div><span class="barvalue">6,990</span></div>
+<div class="barrow"><span class="barname">Cards</span><div class="track"><div class="fill" style="width:3.2%"></div></div><span class="barvalue">4,550</span></div>
+</div></div>
+<div class="card"><h2>Cost efficiency</h2><p class="desc">Calculated using total cost including salaries</p><div class="bars">
+<div class="barrow"><span class="barname">Per trip</span><div class="track"><div class="fill" style="width:100%"></div></div><span class="barvalue">999.42</span></div>
+<div class="barrow"><span class="barname">Per point</span><div class="track"><div class="fill" style="width:13.2%"></div></div><span class="barvalue">131.74</span></div>
+<div class="barrow"><span class="barname">Per km</span><div class="track"><div class="fill" style="width:5.4%"></div></div><span class="barvalue">5.44</span></div>
+</div><div class="notice">Formulas: cost/trip = 400,766 ÷ 401; cost/point = 400,766 ÷ 3,042; cost/km = 400,766 ÷ 73,646.</div></div>
+</section><div class="foot">2B Egypt · Movement & Logistics · November 2025 · Internal management report</div></main></body></html>
